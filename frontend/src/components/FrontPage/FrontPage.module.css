@@ -1,0 +1,35 @@
+
+.maxWidthWrapper {
+  position: relative;
+}
+
+.header {
+  padding-bottom: 64px;
+  width: 65%;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.description {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.controlColumn {
+  width: 50%;
+}
+
+.perspectiveEffect {
+  position: fixed;
+  top: 60%;
+  left: 0;
+  height: 40%;
+  width: 100%;
+  background-color: 808080;
+}
