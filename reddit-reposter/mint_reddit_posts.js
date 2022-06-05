@@ -7,14 +7,12 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/api';
 // Some helper functions used here
 import { stringToU8a, u8aToHex, hexToString } from '@polkadot/util';
-import FileReader from 'filereader';
 import fs from 'fs';
 import readline from 'readline';
-import { useState } from 'react'
 
 
 // Construct
-const wsProvider = new WsProvider('ws://35.81.83.41:11946');
+const wsProvider = new WsProvider('ws://44.234.87.204:11946');
 // Create the instance
 const api = new ApiPromise({ provider: wsProvider, Address: 'MultiAddress', LookupSource: 'MultiAddress' });
 
@@ -45,14 +43,6 @@ async function processLineByLine() {
     return lines;
   }
 
-function hex2a(hexx) {
-    var hex = hexx.toString();//force conversion
-    var str = '';
-    for (var i = 0; i < hex.length; i += 2)
-        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-    return str;
-}
-
 const lines = await processLineByLine();
 const schema = lines[0];
 
@@ -68,7 +58,7 @@ for (let i = 0; i < schemaCount; i++) {
 }
   
 const keyring = new Keyring({ type: 'sr25519' });
-const bob = keyring.addFromUri('//Alice', { name: 'Bob default' });
+const bob = keyring.addFromUri('//Alice', { name: 'Alice default' });
 
 if (schemaId == -1) {
     schemaId = await api.tx.schemas.registerSchema(schema)
@@ -80,28 +70,24 @@ if (schemaId == -1) {
 // console.log("here");
 // console.log(lines.length);
 
+var finalized = false
+const setStatus = ({ status }) => 
+  finalized = status
 
-const [unsub, setUnsub] = useState(null)
-const signedTx = async () => {
-    const unsub = await api.tx.messages.add(schemaId, encodeURIComponent(lines[i]))
-        .signAndSend(bob, txResHandler)
-        .catch(txErrHandler);
-    setUnsub(() => unsub)
-  }
+const txResHandler = ({ status }) =>
+  status.isFinalized
+  ? setStatus(true)
+  : setStatus(false)
+
+const txErrHandler = err =>
+  setStatus(true)
 
 for (let i = 0; i < lines.length; i++) {
     console.log("message");
-    var messageReturn = await api.tx.messages.add(schemaId, encodeURIComponent(lines[i]))
-        .signAndSend(bob, (result) => {
-            console.log(`Current status is ${result.status}`);
-        
-            if (result.status.isInBlock) {
-              console.log(`Transaction included at blockHash ${result.status.asInBlock}`);
-            } else if (result.status.isFinalized) {
-              console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
-              unsub();
-            }
-        }).then(console.log("done"));
+    const messageReturn = await api.tx.messages.add(schemaId, encodeURIComponent(lines[i])).then(
+        signAndSend(bob, txResHandler))
+        .catch(txErrHandler);
+    // while (!finalized) {};
     console.log(messageReturn);
 }
 
