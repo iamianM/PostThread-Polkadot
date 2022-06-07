@@ -1,15 +1,25 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Message from './Message'
+import { useQuery } from 'react-query'
+import axios from 'axios'
 
 export default function ListMessages() {
 
+  const { error, isError, isLoading } = useQuery('messages', fetchMessages)
   const [messages, setMessages] = useState([])
 
-  useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/posts")
-      .then(response => response.json())
-      .then(data => setMessages(data))
-  }, [])
+  async function fetchMessages() {
+    const { data } = await axios.get("https://jsonplaceholder.typicode.com/posts")
+    console.log("Data: " + data)
+    setMessages(data)
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+  if (isError) {
+    return <div>Error! {error.message}</div>
+  }
 
   return (
     <div>
@@ -20,4 +30,12 @@ export default function ListMessages() {
       }
     </div>
   )
+
+
+  // useEffect(() => {
+  //   fetch("https://jsonplaceholder.typicode.com/posts")
+  //     .then(response => response.json())
+  //     .then(data => setMessages(data))
+  // }, [])
+
 }
