@@ -1,16 +1,23 @@
-function hex2a(hexx) {
-    var hex = hexx.toString();//force conversion
-    var str = '';
-    for (var i = 0; i < hex.length; i += 2)
-        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-    return str;
-}
-console.log(hex2a("0x2268656c6c6f2c626c61682c626c65747222"));
-console.log("subreddit,author,title,selftext,url,is_nsfw" == "subreddit,author,title,selftext,url,is_nsfw")
 
-import { stringToU8a, u8aToHex, hexToString } from '@polkadot/util';
+import { stringToU8a, u8aToHex } from '@polkadot/util';
+import { Keyring } from '@polkadot/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
 
+// Construct
+const wsProvider = new WsProvider('ws://35.80.10.26:11946');
+// Create the instance
+const api = new ApiPromise({ provider: wsProvider, Address: 'MultiAddress', LookupSource: 'MultiAddress' });
+
+// Wait until we are ready and connected
+await api.isReadyOrError;
+
+const keyring = new Keyring({ type: 'sr25519' });
+const bob = keyring.addFromUri('//Alice', { name: 'Alice default' });
 // Convert message, sign and then verify
-console.log(stringToU8a("subreddit,author,title,selftext,url,is_nsfw" == "subreddit,author,title,selftext,url,is_nsfw"));
-console.log(u8aToHex(stringToU8a("subreddit,author,title,selftext,url,is_nsfw" == "subreddit,author,title,selftext,url,is_nsfw")));
-console.log(hexToString("0x2268656c6c6f2c626c61682c626c6574722"));
+const message = stringToU8a('this is our message');
+const signature = bob.sign(message);
+const isValid = bob.verify(message, signature, bob.publicKey);
+
+// Log info
+console.log(`The signature ${u8aToHex(signature)}, is ${isValid ? '' : 'in'}valid`);
+console.log(signature)
