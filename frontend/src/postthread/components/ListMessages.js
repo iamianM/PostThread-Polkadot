@@ -10,7 +10,6 @@ export default function ListMessages() {
 
   async function fetchMessages() {
     const { data } = await axios.get("https://jsonplaceholder.typicode.com/posts")
-    console.log("Data: " + data)
     setMessages(data)
   }
 
@@ -30,12 +29,5 @@ export default function ListMessages() {
       }
     </div>
   )
-
-
-  // useEffect(() => {
-  //   fetch("https://jsonplaceholder.typicode.com/posts")
-  //     .then(response => response.json())
-  //     .then(data => setMessages(data))
-  // }, [])
 
 }

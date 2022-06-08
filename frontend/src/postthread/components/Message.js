@@ -2,7 +2,7 @@ import React from 'react'
 
 export default function Message({ message }) {
     return (
-        <div key={message.id}>
+        <div>
             <h1>{message.title}</h1>
             <p>{message.body}</p>
             {/* <Link href={`/posts/${encodeURIComponent(message.id)}`}>

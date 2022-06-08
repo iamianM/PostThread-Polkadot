@@ -1,21 +1,21 @@
 import React from 'react'
-// import { createRef } from 'react'
-// import {
-//   Container,
-//   Dimmer,
-//   Loader,
-//   Grid,
-//   Sticky,
-//   Message,
-// } from 'semantic-ui-react'
+import { createRef } from 'react'
+import {
+  Container,
+  Dimmer,
+  Loader,
+  Grid,
+  Sticky,
+  Message,
+} from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css'
 
 import { SubstrateContextProvider } from './substrate-lib'
-// import { useSubstrateState } from './substrate-lib'
+import { useSubstrateState } from './substrate-lib'
 
 // import { DeveloperConsole } from './substrate-lib/components'
 
-// import AccountSelector from './AccountSelector'
+import AccountSelector from './AccountSelector'
 // import Balances from './Balances'
 // import BlockNumber from './BlockNumber'
 // import Events from './Events'
@@ -25,40 +25,41 @@ import { SubstrateContextProvider } from './substrate-lib'
 // import TemplateModule from './TemplateModule'
 // import Blogchain from './Blogchain'
 import ListMessages from './postthread/components/ListMessages'
+import CreateMessage from './postthread/components/CreateMessage'
 
 function Main() {
-  // const { apiState, apiError, keyringState } = useSubstrateState()
+  const { apiState, apiError, keyringState } = useSubstrateState()
 
-  // const loader = text => (
-  //   <Dimmer active>
-  //     <Loader size="small">{text}</Loader>
-  //   </Dimmer>
-  // )
+  const loader = text => (
+    <Dimmer active>
+      <Loader size="small">{text}</Loader>
+    </Dimmer>
+  )
 
-  // const message = errObj => (
-  //   <Grid centered columns={2} padded>
-  //     <Grid.Column>
-  //       <Message
-  //         negative
-  //         compact
-  //         floating
-  //         header="Error Connecting to Substrate"
-  //         content={`Connection to websocket '${errObj.target.url}' failed.`}
-  //       />
-  //     </Grid.Column>
-  //   </Grid>
-  // )
+  const message = errObj => (
+    <Grid centered columns={2} padded>
+      <Grid.Column>
+        <Message
+          negative
+          compact
+          floating
+          header="Error Connecting to Substrate"
+          content={`Connection to websocket '${errObj.target.url}' failed.`}
+        />
+      </Grid.Column>
+    </Grid>
+  )
 
-  // if (apiState === 'ERROR') return message(apiError)
-  // else if (apiState !== 'READY') return loader('Connecting to Substrate')
+  if (apiState === 'ERROR') return message(apiError)
+  else if (apiState !== 'READY') return loader('Connecting to Substrate')
 
-  // if (keyringState !== 'READY') {
-  //   return loader(
-  //     "Loading accounts (please review any extension's authorization)"
-  //   )
-  // }
+  if (keyringState !== 'READY') {
+    return loader(
+      "Loading accounts (please review any extension's authorization)"
+    )
+  }
 
-  // const contextRef = createRef()
+  const contextRef = createRef()
 
   // return (
   //   <div ref={contextRef}>
@@ -93,9 +94,23 @@ function Main() {
   // )
 
   return (
-    <>
-      <ListMessages />
-    </>
+    <div ref={contextRef}>
+      <Sticky context={contextRef}>
+        <AccountSelector />
+      </Sticky>
+      <Container>
+        <Grid divided='vertically'>
+          <Grid.Row columns={2}>
+            <Grid.Column>
+              <ListMessages />
+            </Grid.Column>
+            <Grid.Column>
+              <CreateMessage />
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
+      </Container>
+    </div>
   )
 
 }
