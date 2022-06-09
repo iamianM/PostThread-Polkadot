@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
-import logo from '../images/postthreadicon.png'
+import logo from "./images/postthreadicon.png"
 
 import {
   Menu,

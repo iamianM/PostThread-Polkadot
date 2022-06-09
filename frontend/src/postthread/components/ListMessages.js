@@ -30,11 +30,4 @@ export default function ListMessages() {
     </div>
   )
 
-
-  // useEffect(() => {
-  //   fetch("https://jsonplaceholder.typicode.com/posts")
-  //     .then(response => response.json())
-  //     .then(data => setMessages(data))
-  // }, [])
-
 }

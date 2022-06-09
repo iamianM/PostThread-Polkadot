@@ -98,14 +98,14 @@ function Main() {
       <Sticky context={contextRef}>
         <AccountSelector />
       </Sticky>
-      <Container >
+      <Container>
         <Grid divided='vertically'>
           <Grid.Row columns={2}>
             <Grid.Column>
               <ListMessages />
             </Grid.Column>
-            <CreateMessage />
             <Grid.Column>
+              <CreateMessage />
             </Grid.Column>
           </Grid.Row>
         </Grid>

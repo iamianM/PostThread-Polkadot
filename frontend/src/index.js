@@ -5,7 +5,6 @@ import App from './App'
 
 const queryClient = new QueryClient()
 
-
 ReactDOM.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
