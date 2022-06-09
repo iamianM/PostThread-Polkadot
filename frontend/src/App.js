@@ -28,6 +28,7 @@ import ListMessages from './postthread/components/ListMessages'
 import CreateMessage from './postthread/components/CreateMessage'
 import CreateMsa from './postthread/components/CreateMsa'
 import RetrieveMsa from './postthread/components/RetrieveMsa'
+import CreateSchema from './postthread/components/CreateSchema'
 
 function Main() {
   const { apiState, apiError, keyringState, currentAccount } = useSubstrateState()
@@ -115,6 +116,9 @@ function Main() {
               </Grid.Row>
               <Grid.Row>
                 {currentAccount && <RetrieveMsa />}
+              </Grid.Row>
+              <Grid.Row>
+                <CreateSchema />
               </Grid.Row>
             </Grid.Column>
           </Grid.Row>

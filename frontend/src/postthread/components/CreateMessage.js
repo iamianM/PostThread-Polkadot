@@ -4,20 +4,21 @@ import { TxButton } from '../../substrate-lib/components'
 
 function CreateMessage() {
   const [status, setStatus] = useState(null)
-  const [formState, setFormState] = useState({ content: '' })
+  const [formMessage, setFormMessage] = useState({ message: '' })
   const schemaId = 1
+  const msaId = 1
 
   const onChange = (_, data) =>
-    setFormState(prev => ({ ...prev, [data.state]: data.value }))
+    setFormMessage(prev => ({ ...prev, [data.state]: data.value }))
 
-  const { content } = formState
+  const { content } = formMessage
 
   return (
     <Grid.Column width={8}>
       <h1>Create new message </h1>
       <Form>
         <Form.Field>
-          <Input label="Subreddit" type="text" placeholder="AskReddit" state="content" onChange={onChange} value={content} />
+          <Input label="Message" type="text" placeholder="Message" state="content" onChange={onChange} value={content} />
         </Form.Field>
         {/* <Form.Field>
           <Input label="Author" type="text" placeholder="Me" state="content" onChange={onChange} value={content} />
@@ -45,8 +46,8 @@ function CreateMessage() {
             attrs={{
               palletRpc: 'messages',
               callable: 'add',
-              inputParams: [schemaId, content],
-              paramFields: [true],
+              inputParams: [msaId, schemaId, content],
+              paramFields: [true, true, true],
             }}
           />
         </Form.Field>
