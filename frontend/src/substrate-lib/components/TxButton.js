@@ -32,7 +32,7 @@ function TxButton({
   const isConstant = () => type === 'CONSTANT'
 
   const loadSudoKey = () => {
-    ;(async function () {
+    ; (async function () {
       if (!api || !api.query.sudo) {
         return
       }
@@ -245,6 +245,7 @@ function TxButton({
         return true
       }
       if (param == null) {
+        console.log(param)
         return false
       }
 
