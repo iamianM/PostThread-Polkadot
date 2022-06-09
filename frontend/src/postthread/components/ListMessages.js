@@ -10,7 +10,6 @@ export default function ListMessages() {
 
   async function fetchMessages() {
     const { data } = await axios.get("https://jsonplaceholder.typicode.com/posts")
-    console.log("Data: " + data)
     setMessages(data)
   }
 

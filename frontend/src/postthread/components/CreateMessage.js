@@ -2,9 +2,11 @@ import { Grid, Form, Input } from 'semantic-ui-react'
 import { useState } from 'react'
 import { TxButton } from '../../substrate-lib/components'
 
-function CreateBlogPost() {
+function CreateMessage() {
   const [status, setStatus] = useState(null)
   const [formState, setFormState] = useState({ content: '' })
+  const schema = "subreddit,author,title,selftext,url,is_nsfw,dsvs"
+
 
   const onChange = (_, data) =>
     setFormState(prev => ({ ...prev, [data.state]: data.value }))
@@ -13,7 +15,7 @@ function CreateBlogPost() {
 
   return (
     <Grid.Column width={8}>
-      <h1>Create Blog Post</h1>
+      <h1>Create new message</h1>
       <Form>
         <Form.Field>
           <Input label="Content" type="text" placeholder="type here..." state="content" onChange={onChange} value={content} />
@@ -37,4 +39,4 @@ function CreateBlogPost() {
   )
 }
 
-export default CreateBlogPost
+export default CreateMessage
