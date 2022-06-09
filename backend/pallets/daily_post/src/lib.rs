@@ -69,6 +69,9 @@ pub mod pallet {
 	pub(super) type CountForNinjas<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::storage]
+	pub(super) type MaxDailyNominations<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
 	pub(super) type Ninjas<T: Config> = StorageMap<_, Twox64Concat, [u8; 16], Ninja<T::AccountId, BalanceOf<T>>>;
 
 	#[pallet::storage]
@@ -109,6 +112,7 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		NominationLimitReached,
+		NominationClosed,
 		TooManyOwned,
 		DuplicateNinja,
 		StorageOverflow,
@@ -252,6 +256,17 @@ pub mod pallet {
 			post: [u8; 16],
 			sender: T::AccountId,
 		) -> DispatchResult {
+			let max_post = MaxDailyNominations::<T>::get();
+			let mut all_posts = NominatedPosts::<T>::get();
+
+			ensure!(all_posts.len() <= max_post.try_into().unwrap(), Error::<T>::NominationLimitReached);
+
+			all_posts.try_push(post).map_err(|()| Error::<T>::NominationLimitReached)?;
+
+			let count = all_posts.len();
+			NominatedPosts::<T>::put(all_posts);
+
+			Self::deposit_event(Event::Nominated { post, by: sender, count: count as u128 });
 			Ok(())
 		}
 
