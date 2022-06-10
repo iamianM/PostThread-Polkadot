@@ -1,0 +1,11 @@
+.message-container {
+    padding: 10px;
+}
+
+.message-title {
+    color: purple;
+}
+
+.message-body {
+    color: blue;
+}

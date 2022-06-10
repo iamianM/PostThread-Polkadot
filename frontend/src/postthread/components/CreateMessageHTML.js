@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
-import { TxButton } from '../../substrate-lib/components'
 import { Grid } from 'semantic-ui-react'
+import "./css/CreateMessage.css"
+import { TxButtonStyled } from "../../substrate-lib/components/TxButtonStyled"
 
 
 function CreateMessageHTML() {
@@ -26,34 +27,34 @@ function CreateMessageHTML() {
 
     return (
         <Grid.Column width={8}>
-            <h1>Create new message </h1>
-            <div>
-                <form>
-                    <label>Subreddit:
-                        <input type="text" id="subreddit" name="subreddit" required={true} onChange={(e) => setSubreddit(e.target.value)} />
+            <h1 className="create-message-title">Create new message </h1>
+            <div className="form-div">
+                <form className="form-container">
+                    <label className="form-label">Subreddit:
+                        <input className="form-input" type="text" id="subreddit" name="subreddit" required={true} onChange={(e) => setSubreddit(e.target.value)} />
                     </label>
                     <br></br>
-                    <label>Author:
-                        <input type="text" id="author" name="author" required={true} onChange={(e) => setAuthor(e.target.value)} />
+                    <label className="form-label">Author:
+                        <input className="form-input" type="text" id="author" name="author" required={true} onChange={(e) => setAuthor(e.target.value)} />
                     </label>
                     <br></br>
-                    <label>Title:
-                        <input type="text" id="title" name="title" required={true} onChange={(e) => setTitle(e.target.value)} />
+                    <label className="form-label">Title:
+                        <input className="form-input" type="text" id="title" name="title" required={true} onChange={(e) => setTitle(e.target.value)} />
                     </label>
                     <br></br>
-                    <label>Text:
-                        <input type="text" id="text" name="text" required={true} onChange={(e) => setText(e.target.value)} />
+                    <label className="form-label">Text:
+                        <input className="form-input" type="text" id="text" name="text" required={true} onChange={(e) => setText(e.target.value)} />
                     </label>
                     <br></br>
-                    <label>Url:
-                        <input type="text" id="url" name="url" required={true} onChange={(e) => setUrl(e.target.value)} />
+                    <label className="form-label">Url:
+                        <input className="form-input" type="text" id="url" name="url" required={true} onChange={(e) => setUrl(e.target.value)} />
                     </label>
                     <br></br>
-                    <label>Is NSFW:
-                        <input type="text" id="is_nsfw" name="is_nsfw" required={true} onChange={(e) => setIsNsfw(e.target.value)} />
+                    <label className="form-label">Is NSFW:
+                        <input className="form-input" type="text" id="is_nsfw" name="is_nsfw" required={true} onChange={(e) => setIsNsfw(e.target.value)} />
                     </label>
                     <br></br>
-                    <TxButton
+                    <TxButtonStyled
                         label="Submit"
                         type="SIGNED-TX"
                         setStatus={setStatus}
@@ -62,8 +63,7 @@ function CreateMessageHTML() {
                             callable: 'add',
                             inputParams: [msaId, schemaId, content],
                             paramFields: [true, true, true],
-                        }}
-                    />
+                        }} />
                     <div style={{ overflowWrap: 'break-word' }}>{status}</div>
                 </form>
             </div>
