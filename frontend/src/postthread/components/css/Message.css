@@ -23,6 +23,16 @@
   padding: 25px 0;
 }
 
+
+.sub-message-container {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    height: 51px;
+    width: 665px;
+  }
+
+
 .message-title {
   color: var(--text-light);
   font-family: var(--font-family-roboto);
