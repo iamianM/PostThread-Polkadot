@@ -4,10 +4,7 @@
   "private": true,
   "author": "Parity Technologies <admin@parity.io>",
   "license": "Unlicense",
-  "homepage": "https://substrate-developer-hub.github.io/substrate-front-end-template",
-  "bugs": {
-    "url": "https://github.com/substrate-developer-hub/substrate-front-end-template/issues"
-  },
+  "homepage": "/",
   "keywords": [
     "substrate",
     "substrate-ui",
@@ -16,6 +13,7 @@
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
+    "dev": "react-app-rewired dev",
     "test": "CI=true react-app-rewired test",
     "eject": "react-scripts eject",
     "eslint:check": "eslint --ext .jsx,.js src/",
@@ -40,11 +38,14 @@
     "react": "^17.0.2",
     "react-copy-to-clipboard": "^5.0.4",
     "react-dom": "^17.0.2",
+    "react-infinite-scroll-component": "^6.1.0",
     "react-query": "^3.39.1",
-    "react-scripts": "^5.0.0",
+    "react-router-dom": "^6.3.0",
+    "react-scripts": "^5.0.1",
     "semantic-ui-css": "Semantic-Org/Semantic-UI-CSS#master",
     "semantic-ui-react": "^2.1.2",
-    "stream-browserify": "^3.0.0"
+    "stream-browserify": "^3.0.0",
+    "use-local-storage": "^2.3.6"
   },
   "devDependencies": {
     "eslint": "^8.10.0",
