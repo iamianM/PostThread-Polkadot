@@ -23,6 +23,7 @@
     "deploy": "gh-pages -d build -m '[ci skip] Updates'"
   },
   "dependencies": {
+    "@dhaiwat10/react-link-preview": "^1.14.0",
     "@polkadot/api": "^7.10.1",
     "@polkadot/extension-dapp": "^0.42.7",
     "@polkadot/keyring": "^8.4.1",
