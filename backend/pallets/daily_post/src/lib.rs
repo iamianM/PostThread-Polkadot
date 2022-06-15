@@ -82,7 +82,7 @@ pub mod pallet {
 	>;
 
 	#[pallet::storage]
-	pub(super) type VoteCount<T: Config> = StorageMap<_, Twox64Concat, u8, u64>;
+	pub(super) type NominationsCount<T: Config> = StorageMap<_, Twox64Concat, [u8; 16], u64>;
 
 	#[pallet::storage]
 	pub(super) type NinjasOwned<T: Config> = StorageMap<
@@ -113,6 +113,7 @@ pub mod pallet {
 	pub enum Error<T> {
 		NominationLimitReached,
 		NominationClosed,
+		InvalidNomination,
 		TooManyOwned,
 		DuplicateNinja,
 		StorageOverflow,
@@ -163,7 +164,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(100)]
+		#[pallet::weight(0)]
 		pub fn transfer_ninja(
 			origin: OriginFor<T>,
 			to: T::AccountId,
@@ -178,7 +179,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(1)]
+		#[pallet::weight(0)]
 		pub fn set_price(
 			origin: OriginFor<T>,
 			ninja_id: [u8; 16],
@@ -208,14 +209,6 @@ pub mod pallet {
 
 			Ok(())
 		}
-
-		// #[pallet::weight(10)]
-		// pub fn update_base_uri(
-		// 	origin: OriginFor<T>,
-		// 	uri: str,
-		// ) -> DispatchResult {
-		// 	let sender = ensure_signed(origin)?;
-		// }
 	}
 
 	// Pallet internal function
@@ -249,6 +242,14 @@ pub mod pallet {
 			post: [u8; 16],
 			sender: T::AccountId,
 		) -> DispatchResult {
+			let nom_count = NominationsCount::<T>::get(&post).ok_or(Error::<T>::InvalidNomination)?;
+			
+			let new_count = nom_count.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+
+			NominationsCount::<T>::insert(&post, new_count);
+
+			Self::deposit_event(Event::<T>::Nominated { post, by: sender, count: new_count.try_into().unwrap() });
+			
 			Ok(())
 		}
 
