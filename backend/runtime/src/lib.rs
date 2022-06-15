@@ -292,7 +292,6 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
 		PostOfTheDay: pallet_daily_post,
-		PostThreadPosts: pallet_posts,
 	}
 );
 
