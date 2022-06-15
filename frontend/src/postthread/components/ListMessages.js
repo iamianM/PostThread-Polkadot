@@ -8,31 +8,17 @@ import "./css/ListMessages.css";
 
 export default function ListMessages() {
   const { error, isError, isLoading } = useQuery("messages", fetchMessages);
-  // const [allMessages, setAllMessages] = useState([]);
   const [messages, setMessages] = useState([]);
-  // const messagesPerScroll = 10;
+  const [iter, setIter] = useState(1);
+  const numMessagesPerScroll = 10
 
   async function fetchMessages() {
-    // if (messages.length == 0) {
     const { data } = await axios.get(
-      "https://jsonplaceholder.typicode.com/posts"
+      `http://cupochia.ddns.net:5000/posts/${iter}/${numMessagesPerScroll}`
     );
-    setMessages(messages.concat(data));
-    // }
-    // if (messages.length + messagesPerScroll >= allMessages.length) {
-    //   const { data } = await axios.get(
-    //     "https://jsonplaceholder.typicode.com/posts"
-    //   );
-    //   setAllMessages(allMessages.concat(data));
-    // }
-    // console.log(allMessages.length);
-    // console.log(messages.length);
-    // setMessages(
-    //   messages.concat(
-    //     allMessages.slice(messages.length, messages.length + messagesPerScroll)
-    //   )
-    // );
-    // console.log(messages.length);
+    console.log(data, iter, numMessagesPerScroll)
+    setMessages(messages.concat(data.results));
+    setIter(iter+1);
   }
 
   if (isLoading) {
