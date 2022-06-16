@@ -208,7 +208,7 @@ pub mod pallet {
 			Self::handle_buy_ninja(ninja_id, buyer, bid_price)?;
 
 			Ok(())
-		}
+		} 
 	}
 
 	// Pallet internal function
