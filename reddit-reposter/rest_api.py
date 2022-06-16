@@ -22,60 +22,11 @@ app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
+# specify schemas to be used
+post_schemaId, postcomment_schemaId, commentcomment_schemaId, postvote_schemaId, commentvote_schemaId = 147, 150, 151, 154, 153
 
-def add_comment(_data, _dict, _is_vote, block_number):
-    '''
-    Helper function for adding comments or votes to nested comments
-    '''
-    for hsh in _dict.keys():
-        if hsh == _data[2]:
-            if is_vote:
-                if '-' in _data[3]:
-                    # downvote
-                    _dict['data']['downvotes'] += _data[3]
-                else:
-                    # upvote
-                    _dict['data']['upvotes'] += _data[3]
-            else:
-                _dict[data[3]] = {
-                    'data': json.loads(client.cat(_data[3]).decode()), 
-                    'comments': {}
-                }
-                
-                _dict['data'].update({"upvotes": 0, "downvotes": 0})
-                _dict['data']['block_number'] = block_number
-            return True
-        result = add_comment(_data, _dict['comments'], _is_vote, block_number)
-        if result:
-            return True
-    return False
 
-def get_posts(category=None, post_hash=None, num_blocks=None, starting_block=None):
-    # This is current pattern I'm using to store posts where the first two values are the 
-    # category (subreddit) and post hash
-    if category is None:
-        category = '.*'
-    if post_hash is None:
-        post_hash = '.*'
-    post_pattern = re.compile(f"{category},{post_hash},parent_hash,data_hash")
-
-    schema_count = substrate.query(
-        module='Schemas',
-        storage_function='SchemaCount',
-        params=[]
-    ).value
-
-    # Loop through all schemas and save ones that match format
-    post_schemas = {}
-    for i in range(1, schema_count+1):
-        schemaTemp = substrate.query(
-            module='Schemas',
-            storage_function='Schemas',
-            params=[i]
-        )
-        if post_pattern.match(schemaTemp.value):
-            post_schemas[schemaTemp.value] = i
-
+def get_top_posts(page_number, num_posts, category=None, post_hash=None, num_blocks=None, starting_block=5496):
     # get all announcements from specified period
     current_block = substrate.get_block()['header']['number']
 
@@ -83,14 +34,16 @@ def get_posts(category=None, post_hash=None, num_blocks=None, starting_block=Non
         end_block = current_block
         starting_block = max(current_block + 1 - 10000, 0)
     if num_blocks is None:
-        end_block = min(starting_block + 10000, current_block + 1 - starting_block)
+        end_block = min(starting_block + 10000, current_block + 1)
     if starting_block is None:
         end_block = current_block
         starting_block = max(current_block + 1 - num_blocks,0)
         
     start = time.time()
     content_jsons = {}
-    for schema, schemaId in post_schemas.items():
+    content_json = {}
+    print(starting_block, end_block)
+    for schemaId in [post_schemaId, postvote_schemaId]:
         params = [
             schemaId,
             {
@@ -101,75 +54,72 @@ def get_posts(category=None, post_hash=None, num_blocks=None, starting_block=Non
             }
         ]
 
-        content = substrate.rpc_request(
+        content_json[schemaId] = substrate.rpc_request(
             method='messages_getBySchema',
             params=params,
-        )
-        if len(content['result']['content']) > 0:
-            content_jsons[schema] = content['result']['content']
+        )['result']['content']
     end = time.time()
     print("Querying content: ", end-start)
 
     start = time.time()
     posts = {}
-    for schema, contents in content_jsons.items():
-        schema_items = schema.split(',')
-        category = schema_items[0]
-        post_hash = schema_items[1]
-        posts[post_hash] = {'data': {"upvotes": 0, "downvotes": 0}, 'comments': {}}
-        
-        for content in contents:
-            data = bytes.fromhex(content['data'][2:]).decode().split(',')
-            # votes had numeric numbers instead of hashes
-            is_vote = data[3].strip('-').isnumeric() 
-            if is_vote:
-                data[3] = int(data[3])
+    for content in content_json[postvote_schemaId]:
+        data = bytes.fromhex(content['data'][2:]).decode().split(',')
+        if category is not None and data[1] != category:
+            continue
+        if data[2] not in posts:
+            posts[data[2]] = {'upvotes': 0, 'downvotes': 0, 'score': 0}
+        if data[2] in posts:
+            num_votes = int(data[3])
+            posts[data[2]]['score'] += num_votes 
+            if num_votes > 0:
+                posts[data[2]]['upvotes'] += num_votes
+            else:
+                posts[data[2]]['downvotes'] += -1*num_votes  
                 
-            if data[2] == '': 
-                # empty means its post data
-                posts[post_hash]['data'].update(json.loads(client.cat(data[3]).decode()))
-                posts[post_hash]['data']['block_number'] = content['block_number']
-            elif data[2] == post_hash: 
-                # post_hash means its comment
-                result = add_comment(data, posts[post_hash], is_vote, content['block_number'])
-            else: 
-                # neither means its comment of comment
-                result = add_comment(data, posts[post_hash]['comments'], is_vote, content['block_number'])
-                # if not result:
-                #     print('couldnt find', data[2], json.loads(client.cat(data[3]).decode()))
+    posts = OrderedDict(sorted(posts.items(), key=lambda t: t[1]['score'], reverse=True))
+    i_range = list(range((page_number - 1) * num_posts, page_number * num_posts))
+    posts = {k: v for i, (k,v) in enumerate(posts.items()) if i in i_range}
+
+    i = 0
+    for content in reversed(content_json[post_schemaId]):
+        if i == len(posts):
+            break
+            
+        data = bytes.fromhex(content['data'][2:]).decode().split(',')
+        if data[2] not in posts:
+            continue
+            
+        i += 1
+        posts[data[2]].update(json.loads(client.cat(data[2]).decode()))
+        posts[data[2]]['block_number'] = content['block_number']
+        
+    posts_list = []
+    for i, (k,v) in enumerate(posts.items()):
+        v['id'] = k
+        posts_list.append(v)
     end = time.time()
     print("Formatting: ", end-start)
 
-    return OrderedDict(sorted(posts.items(), key=lambda t: t[1]['data']['upvotes'], reverse=True))
+    print(len(posts_list))
+    return {"results": posts_list}
 
 
     
 @app.route('/post/<string:post_hash>/<int:page_number>/<int:num_posts>', methods = ['GET'])
 def post(post_hash, page_number, num_posts):
-    posts_dict = post(post_hash=post_hash, num_blocks=None, starting_block=None)
-    posts_list = []
-    i_range = list(range((page_number - 1) * num_posts, page_number * num_posts))
-    for i, (k, v) in enumerate(posts_dict.items()):
-        if i in i_range:
-            v['id'] = k
-            posts_list.append(v)
+    results = get_top_posts(post_hash=post_hash)
 
-    response = jsonify({'results': posts_list})
+    response = jsonify(results)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 @app.route('/posts/<int:page_number>/<int:num_posts>/<string:category>', methods = ['GET'])
 @app.route('/posts/<int:page_number>/<int:num_posts>', methods = ['GET'], defaults={'category': None})
 def posts(page_number, num_posts, category):
-    posts_dict = get_posts(category=category, post_hash=None, num_blocks=None, starting_block=None)
-    posts_list = []
-    i_range = list(range((page_number - 1) * num_posts, page_number * num_posts))
-    for i, (k, v) in enumerate(posts_dict.items()):
-        if i in i_range:
-            v['id'] = k
-            posts_list.append(v)
+    results = get_top_posts(page_number, num_posts,category=category)
 
-    response = jsonify({'results': posts_list})
+    response = jsonify(results)
     response.headers.add('Access-Control-Allow-Origin', '*')
     # response.headers.add('Access-Control-Allow-Private-Network', True)
     return response

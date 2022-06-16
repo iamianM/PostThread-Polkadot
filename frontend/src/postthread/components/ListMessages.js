@@ -36,6 +36,7 @@ export default function ListMessages() {
         next={fetchMessages}
         hasMore={true}
         loader={<h4>Loading...</h4>}
+        className="all-messages-container"
       >
         {messages.map((message) => (
           <Message key={message.id} message={message} />

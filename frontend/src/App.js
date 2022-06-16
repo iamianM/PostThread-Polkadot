@@ -24,6 +24,7 @@ import AccountSelector from "./AccountSelector";
 // import NodeInfo from './NodeInfo'
 // import TemplateModule from './TemplateModule'
 // import Blogchain from './Blogchain'
+import CreatePost from "./postthread/components/CreatePost";
 import ListMessages from "./postthread/components/ListMessages";
 import CreateMessage from "./postthread/components/CreateMessage";
 import CreateMsa from "./postthread/components/CreateMsa";
@@ -32,6 +33,8 @@ import CreateSchema from "./postthread/components/CreateSchema";
 import CreateMessageHTML from "./postthread/components/CreateMessageHTML";
 
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+
+import "./css/App.css";
 
 function Main(props) {
   const { apiState, apiError, keyringState, currentAccount } =
@@ -73,16 +76,19 @@ function Main(props) {
       <Sticky context={contextRef}>
         <AccountSelector />
       </Sticky>
-      {props.name == "" ? (
-        <ListMessages />
-      ) : props.name == "submit" ? (
-        [<CreateMessage />, <CreateMessageHTML />]
-      ) : props.name == "testing" ? (
-        [currentAccount && <RetrieveMsa />, <CreateMsa />, <CreateSchema />]
-      ) : (
-        ""
-      )}
-      <DeveloperConsole />
+      <div className="lower">
+        {props.name == "" ? (
+          [<CreatePost />,
+          <ListMessages />]
+        ) : props.name == "submit" ? (
+          [<CreateMessage />, <CreateMessageHTML />]
+        ) : props.name == "testing" ? (
+          [currentAccount && <RetrieveMsa />, <CreateMsa />, <CreateSchema />]
+        ) : (
+          ""
+        )}
+        <DeveloperConsole />
+      </div>
     </div>
   );
 }
