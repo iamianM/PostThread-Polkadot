@@ -15,6 +15,8 @@ import {
 
 import { useSubstrate, useSubstrateState } from "./substrate-lib";
 
+import "./css/AccountSelector.css";
+
 const CHROME_EXT_URL =
   "https://chrome.google.com/webstore/detail/polkadot%7Bjs%7D-extension/mopnmbcafieddcagagdcbnhejhlodfdd";
 const FIREFOX_ADDON_URL =
