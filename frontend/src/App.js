@@ -77,12 +77,12 @@ function Main(props) {
         <AccountSelector />
       </Sticky>
       <div className="lower">
-        {props.name == "" ? (
+        {props.name === "" ? (
           [<CreatePost />,
           <ListMessages />]
-        ) : props.name == "submit" ? (
+        ) : props.name === "submit" ? (
           [<CreateMessage />, <CreateMessageHTML />]
-        ) : props.name == "testing" ? (
+        ) : props.name === "testing" ? (
           [currentAccount && <RetrieveMsa />, <CreateMsa />, <CreateSchema />]
         ) : (
           ""
