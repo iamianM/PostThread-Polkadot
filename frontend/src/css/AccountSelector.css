@@ -1,0 +1,7 @@
+.menu {
+  /* align-items: flex-start; */
+  display: flex;
+  height: 86px;
+  padding: 14px 50px;
+  width: 1442px;
+}

@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { TxButton } from '../../substrate-lib/components'
 
-
 export default function CreateMsa() {
 
     const [status, setStatus] = useState(null)

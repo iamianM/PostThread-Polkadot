@@ -1,11 +1,20 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { TxButton } from '../../substrate-lib/components'
 import { useSubstrateState } from '../../substrate-lib'
 
 export default function RetrieveMsa() {
 
-    const { currentAccount } = useSubstrateState()
+    const { api, currentAccount } = useSubstrateState()
     const [status, setStatus] = useState(null)
+
+    async function getMsa() {
+        const data = await api.query.msa.keyInfoOf(currentAccount["address"])
+        console.log(`Current account msa id is ${data}`);
+    }
+
+    useEffect(() => {
+        getMsa()
+    }, [currentAccount])
 
     return (
         <div>
