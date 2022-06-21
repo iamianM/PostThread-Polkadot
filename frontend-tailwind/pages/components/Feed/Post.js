@@ -20,7 +20,7 @@ export default function Post({ post }) {
 
     return (
         <div className="flex w-full p-8 border-b border-gray-300">
-            <span className="flex-shrink-0 w-12 h-12 bg-gray-400 rounded-full">
+            <span className="flex-shrink-0 w-12 h-12 bg-primary-400 rounded-full">
                 <img alt="profil" src={profilePic}
                     className="mx-auto object-cover rounded-full" />
             </span>
@@ -31,7 +31,7 @@ export default function Post({ post }) {
                     <span className="ml-auto text-sm">Just now</span>
                 </div>
                 <p className="mt-1">{body}<a className="underline" href="#">#hashtag</a></p>
-                <div className="flex items-center justify-center h-64 mt-2 bg-gray-200">
+                <div className="flex items-center justify-center h-64 mt-2 bg-primary-200">
                     <img alt="image" src={image} className="flex items-center justify-center h-64 " />
                 </div>
                 <div className="flex mt-2">
