@@ -4,7 +4,7 @@ import { useQuery } from "react-query";
 import DisplayPosts from './DisplayPosts';
 import InfiniteScroll from "react-infinite-scroll-component";
 import Loader from '../Loader';
-
+import Image from 'next/image';
 
 export default function Feed() {
 
@@ -39,10 +39,13 @@ export default function Feed() {
                 </div>
                 <div className="flex flex-col flex-grow border-l border-r border-gray-300">
                     <div className="flex justify-between flex-shrink-0 px-8 py-4 border-b border-gray-300">
-                        <h1 className="text-xl font-semibold">Feed Title</h1>
-                        <a href="/create-post">
+                        <div className="inline-flex items-center space-x-2">
+                            <h1 className="text-xl font-semibold">PostThread</h1>
+                            <Image src="/postthreadicon.png" height={30} width={30} />
+                        </div>
+                        {/* <a href="/create-post">
                             <button className="flex items-center h-8 px-2 text-sm bg-gray-300 rounded-sm hover:bg-gray-400">New post</button>
-                        </a>
+                        </a> */}
                     </div>
                     <div className="flex-grow h-0 overflow-auto">
                         <div className="flex w-full p-8 border-b-4 border-gray-300">

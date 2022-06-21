@@ -35,9 +35,9 @@ export default function Post({ post }) {
                     <img alt="image" src={image} className="flex items-center justify-center h-64 " />
                 </div>
                 <div className="flex mt-2">
-                    <ThumbsUp />
-                    <ThumbsDown />
-                    <Comments />
+                    <ThumbsUp upvotes={post.data.upvotes} />
+                    <ThumbsDown downvotes={post.data.downvotes} />
+                    <Comments numberOfComments={post.data.num_comments} />
                 </div>
             </div>
         </div>
