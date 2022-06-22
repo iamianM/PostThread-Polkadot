@@ -1,7 +1,11 @@
 .menu {
+  z-index: 10000;
+  position: fixed;
+  top: 0px;
+  width: 100%;
   /* align-items: flex-start; */
   display: flex;
-  height: 86px;
+  height: 10%;
   padding: 14px 50px;
-  width: 1442px;
+  box-shadow: 2px 1px 5px #00000026;
 }

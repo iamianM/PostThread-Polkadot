@@ -38,7 +38,7 @@ export default function ListMessages() {
       className="all-messages-container"
     >
       {messages.map((message) => (
-        <Message key={message.id} message={message} />
+        <Message key={message.data.id} message={message} />
       ))}
     </InfiniteScroll>
   );

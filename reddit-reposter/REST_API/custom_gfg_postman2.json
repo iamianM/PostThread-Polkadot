@@ -1,0 +1,141 @@
+{
+    "info": {
+        "_postman_id": "a7172710-8c4e-44a8-a313-d35ed73c1f97",
+        "name": "REST_API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "airdrop",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/airdrop/{{user_msa_id}}"
+            },
+            "response": []
+        },
+        {
+            "name": "airdrop",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/airdrop/{{username}}"
+            },
+            "response": []
+        },
+        {
+            "name": "post",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/post/{{post_hash}}/{{page_number}}/{{num_posts}}",
+                "description": "Gist detail view.\n---\nget:\n  parameters:\n  - in: path\n    schema: PostParameter\n  responses:\n    200:\n      content:\n        application/json:\n          schema: PostSchema\npost:\n  parameters:\n  - in: path\n    schema: DemoParameter\n  responses:\n    200:\n      content:\n        application/json:\n          schema: DemoSchema"
+            },
+            "response": []
+        },
+        {
+            "name": "posts",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/posts/{{page_number}}/{{num_posts}}/{{category}}"
+            },
+            "response": []
+        },
+        {
+            "name": "posts",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/posts/{{page_number}}/{{num_posts}}"
+            },
+            "response": []
+        },
+        {
+            "name": "user",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/user/{{user_msa_id}}"
+            },
+            "response": []
+        },
+        {
+            "name": "user",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/user/{{username}}"
+            },
+            "response": []
+        },
+        {
+            "name": "airdrop",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/airdrop"
+            },
+            "response": []
+        },
+        {
+            "name": "post",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/post",
+                "description": "Gist detail view.\n---\nget:\n  parameters:\n  - in: path\n    schema: PostParameter\n  responses:\n    200:\n      content:\n        application/json:\n          schema: PostSchema\npost:\n  parameters:\n  - in: path\n    schema: DemoParameter\n  responses:\n    200:\n      content:\n        application/json:\n          schema: DemoSchema"
+            },
+            "response": []
+        },
+        {
+            "name": "user",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": []
+                },
+                "url": "{{base_url}}/user"
+            },
+            "response": []
+        }
+    ]
+}
