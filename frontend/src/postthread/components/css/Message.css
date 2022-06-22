@@ -1,99 +1,60 @@
 .message-container {
-  align-items: center;
-  background-color: var(--text-dark2);
-  border-radius: 5px;
-  box-shadow: 2px 1px 5px #00000026;
-  display: flex;
-  flex-direction: column;
-  height: flex;
-  overflow: hidden;
-  padding: 25px 25px;
-  position: relative;
-  width: 725px;
-  margin-top: 25px;
-  margin-left: 100px;
+    align-items: center;
+    background-color: var(--text-dark2);
+    border-radius: 5px;
+    box-shadow: 2px 1px 5px 
+  #00000026;
+    display: flex;
+    flex-direction: column;
+    height: 193px;
+    overflow: hidden;
+    padding: 25px 0;
+    position: relative;
+    width: 725px;
 }
+
 
 .sub-message-container {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  height: flex;
-  width: 665px;
-  padding: 25px 0;
-}
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    height: 51px;
+    width: 665px;
+  }
+
+
+
+.sub-message-container {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    height: 51px;
+    width: 665px;
+  }
+
 
 .message-title {
-  color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: var(--text-light);
   font-family: var(--font-family-roboto);
   font-size: var(--font-size-m);
   font-weight: 700;
-  letter-spacing: 0.7px;
-  margin-top: -1px;
+  height: 16px;
+  letter-spacing: 0.70px;
 }
 
 .message-body {
-  color: var(--text-light);
-  font-family: var(--font-family-roboto);
-  font-size: var(--font-size-m);
-  font-weight: 300;
-  letter-spacing: 0.7px;
-  line-height: 25px;
-  min-height: 25px;
-  white-space: wrap;
-}
+    color: var(--text-light);
+    font-family: var(--font-family-roboto);
+    font-size: var(--font-size-m);
+    font-weight: 300;
+    letter-spacing: 0.70px;
+    line-height: 25px;
+    min-height: 25px;
+    white-space: nowrap;
+  }
 
-.head {
-  align-items: center;
-  display: flex;
-  position: relative;
-  width: 665px;
-}
 
-.group-5 {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  margin-left: 15px;
-  min-height: 32px;
-  width: 75px;
-}
 
-.ava {
-  height: 40px;
-  object-fit: cover;
-  width: 40px;
-}
-
-.nikcname {
-  height: 15px;
-  letter-spacing: 0.65px;
-}
-
-.time {
-  height: 12px;
-  letter-spacing: 0.5px;
-  margin-top: 5px;
-}
-
-.valign-text-middle {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.roboto-normal-black-13px {
-  color: var(--text-light);
-  font-family: var(--font-family-roboto);
-  font-size: var(--font-size-s);
-  font-weight: 400;
-  font-style: normal;
-}
-
-.roboto-normal-gray-10px {
-  color: var(--gray);
-  font-family: var(--font-family-roboto);
-  font-size: var(--font-size-xxxs);
-  font-weight: 400;
-  font-style: normal;
-}
