@@ -16,11 +16,9 @@ export default function CreatePost() {
                 Lets share what going on your mind...
             </p>
             </div>
-            <div className="button">
-                <button type="button" onClick={handleClick} className="create-post">
-                    Create Post
-                </button>
-            </div>
+            <button type="button" onClick={handleClick} className="button">
+                Create Post
+            </button>
         </div>
         </div>
     );
