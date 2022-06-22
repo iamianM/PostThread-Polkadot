@@ -9,6 +9,7 @@ import { themeChange } from 'theme-change'
 import TrendingPost from '../TrendingPost';
 import CreatePost from './CreatePost';
 import ThemeSelector from './ThemeSelector';
+import { CONSTANTS } from '../../constants/Constants';
 
 export default function Feed() {
 
@@ -24,17 +25,15 @@ export default function Feed() {
     }, [])
 
     async function fetchPosts() {
-        const { data } = await axios.get(
-            `http://cupochia.ddns.net:5000/posts/${iter}/${numMessagesPerScroll}`
-        );
-        console.log(data, iter, numMessagesPerScroll)
-        setPosts(posts.concat(data.results));
+        const response = await fetch(`/api/posts/${iter}/${numMessagesPerScroll}`)
+        const data = await response.json()
+        setPosts(posts.concat(data));
         setIter(prevIter => prevIter + 1);
     }
 
     return (
 
-        <div className="flex justify-center w-screen h-screen px-4 text-gray-700 bg-base-100">
+        <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
             <div className="flex w-full max-w-screen-lg ">
                 <div className="flex flex-col w-64 py-4 pr-3">
                     <a className="px-3 py-2 mt-2 text-lg hover:text-base-100 text-primary font-medium rounded-lg hover:bg-secondary" href="/">Home</a>
@@ -47,20 +46,14 @@ export default function Feed() {
                         </div>
                     </a>
                 </div>
-                <div className="flex flex-col flex-grow border-l border-r border-gray-300">
-                    <div className="flex justify-between flex-shrink-0 px-8 py-4 border-b border-gray-300">
-                        <div className="inline-flex items-center space-x-2">
-                            <h1 className="text-xl font-semibold">PostThread</h1>
-                            <Image src="/postthreadicon.png" height={30} width={30} />
-                        </div>
-                        <ThemeSelector />
-                        {/* <a href="/create-post">
-                            <button className="flex items-center h-8 px-2 text-sm bg-primary rounded-sm hover:bg-primary">New post</button>
-                        </a> */}
+                <div className="flex flex-col flex-grow border-l border-r border-neutral">
+                    <div className="flex justify-between flex-shrink-0 px-8 py-4 border-b border-neutral">
+                        <a href="/create-post">
+                            <button className="flex items-center h-8 px-2 text-md bg-primary rounded-xl hover:bg-primary-focus">New post</button>
+                        </a>
                     </div>
                     <div className="flex-grow h-0 overflow-auto">
-                        <CreatePost />
-                        <div className="flex w-full p-8 border-b border-gray-300">
+                        <div className="flex w-full p-8 border-b border-neutral">
                             {isLoading ?
                                 <Loader text="Loading posts..." />
                                 :
@@ -78,7 +71,7 @@ export default function Feed() {
                     </div>
                 </div>
                 <div className="flex flex-col flex-shrink-0 w-1/4 py-4 pl-4">
-                    <input className="flex items-center h-8 px-2 border border-gray-500 rounded-sm" type="search" placeholder="Search…" />
+                    <input className="flex items-center h-8 px-2 border border-neutral rounded-sm" type="search" placeholder="Search…" />
                     <div>
                         <h3 className="mt-6 font-semibold">Trending</h3>
                         <TrendingPost />

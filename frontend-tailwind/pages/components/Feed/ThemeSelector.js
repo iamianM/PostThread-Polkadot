@@ -2,8 +2,8 @@ import React from 'react'
 
 export default function ThemeSelector() {
     return (
-        <div class="m-5">
-            <select data-choose-theme class="focus:outline-none h-10 rounded-full px-3 border bg-secondary">
+        <div className="m-5">
+            <select data-choose-theme className="focus:outline-none h-10 rounded-full px-3 border bg-secondary">
                 <option value="light">light🌕</option>
                 <option value="dark">dark🌑</option>
                 <option value="halloween">halloween🎃</option>
