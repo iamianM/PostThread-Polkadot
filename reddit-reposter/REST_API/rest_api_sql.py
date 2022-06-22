@@ -1,9 +1,11 @@
 import os, sys; sys.path.append('..')
 
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 
 from enum import Enum
 from typing import Union
+from flask import jsonify
 from fastapi import FastAPI, Query, Path
 from pydantic import BaseModel, HttpUrl
 
@@ -63,6 +65,18 @@ tags_metadata = [
 ]
 app = FastAPI(title="PostThreadAPI", openapi_tags=tags_metadata, root_path_in_servers=False)
 
+origins = [
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get('/post/{post_hash}', tags=["postpage"], summary="Get post data from IPFS hash")
 def post_get(post_hash: str):
     query = f'''
@@ -83,11 +97,11 @@ def post_get(post_hash: str):
 
 class PostInput(BaseModel):
     category: str
-    username: str
+    username: str = "test1"
     profile_pic: str
     title: str
     body: str
-    url: HttpUrl
+    url: HttpUrl = "http://www.google.com"
     is_nsfw: bool 
     
 @app.post('/submit', tags=["submitpage"], summary="Submit data to mint a post.")
@@ -101,7 +115,7 @@ def submit_post(postInput: PostInput, user_msa_id: Union[int, None]=None,
     if user_msa_id is None:
         df = get_user(username=postInput.username)
         if df.size == 0:
-            return {}, 401
+            return 401
         user_msa_id = df['msa_id'].iloc[0]
 
     receipt = make_post(postInput.__dict__, user_msa_id, wait_for_inclusion, wait_for_finalization)
@@ -154,6 +168,9 @@ def posts_get(
     '''
     df = pd.read_sql_query(query, con)
     response = df.to_dict(orient='records')
+    # response = jsonify(df.to_dict(orient='records'))
+    # response.headers.add('Access-Control-Allow-Origin', '*')
+    
     return response
 
 @app.get('/comments/{post_hash}/{page_number}/{num_comments}', tags=["postpage"], summary="Get list of comments to display on post page.")
@@ -217,6 +234,9 @@ def user_get(username: Union[str, None] = None, user_msa_id: Union[str, None] = 
 
     df = get_user(username, user_msa_id)
 
+    if df.size == 0:
+        return 401
+    
     response = df.to_dict(orient='records')[0]
     return response
 

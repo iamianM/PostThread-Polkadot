@@ -4,17 +4,20 @@ import DisplayPosts from './DisplayPosts';
 import InfiniteScroll from "react-infinite-scroll-component";
 import Loader from '../Loader';
 import TrendingPost from './TrendingPost';
+import { CONSTANTS } from '../../constants/Constants';
 
 export default function Feed() {
 
     const { error, isError, isLoading } = useQuery("posts", fetchPosts);
     const [posts, setPosts] = useState([]);
     const [iter, setIter] = useState(1);
-    const numMessagesPerScroll = 100
+    const numMessagesPerScroll = 10
 
 
     async function fetchPosts() {
-        const response = await fetch(`/api/posts/${iter}/${numMessagesPerScroll}`)
+        let headers = new Headers();
+        headers.append('Access-Control-Allow-Origin', '*');
+        const response = await fetch(`${CONSTANTS.server}/posts/${iter}/${numMessagesPerScroll}`, {headers: headers})
         const data = await response.json()
         setPosts(posts.concat(data));
         setIter(prevIter => prevIter + 1);

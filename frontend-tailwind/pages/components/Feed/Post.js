@@ -19,6 +19,10 @@ export default function Post({ post }) {
         return Math.floor(Math.random() * (max - min + 1) + min)
     }
 
+    function isImage(url) {
+        return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
+    }
+
     const onError = () => {
         setShowImage(false);
     }
@@ -34,13 +38,13 @@ export default function Post({ post }) {
                     <span className="font-semibold">@{username}</span>
                     <span className="ml-auto text-sm">{post.date_minted}</span>
                 </div>
-                <p className="font-bold">{post.title}</p>
+                {isImage(image) ? <p className="font-bold">{post.title}</p> : <a href={image} className="font-bold">{post.title}</a>}
                 <p className="mt-1">{body}</p>
                 <div className="flex items-center justify-center h-64 mt-2 bg-primary-200">
-                    {showImage ?
-                        <img alt="image" onError={onError} src={image} className="flex items-center justify-center h-64 " />
-                        :
-                        <img alt="image-not-found" src="./not-found.png" className="flex items-center justify-center h-64 " />
+                    {isImage(image) ? (showImage ?
+                        <img alt="image" onError={onError} src={image} className="flex items-center justify-center h-64 "/>
+                        : <img alt="image-not-found" src="./not-found.png" className="flex items-center justify-center h-64 " />
+                    ) : ""
                     }
                 </div>
                 <div className="flex mt-2 items-center justify-between">
