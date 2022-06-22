@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Comments from '../Buttons/Comments'
 import ThumbsDown from '../Buttons/ThumbsDown'
 import ThumbsUp from '../Buttons/ThumbsUp'
 
 export default function Post({ post }) {
 
+    const [showImage, setShowImage] = useState(true)
     const username = post.username === "removed" ? "Username" : post.username
     const randomPersonNumber = randomIntFromInterval(3, 10)
     const profilePic = post.profile_pic === "removed" ? `https://www.tailwind-kit.com/images/person/${randomPersonNumber}.jpg` : post.profile_pic
@@ -18,6 +19,10 @@ export default function Post({ post }) {
         return Math.floor(Math.random() * (max - min + 1) + min)
     }
 
+    const onError = () => {
+        setShowImage(false);
+    }
+
     return (
         <div className="flex w-full p-8 border-b border-gray-300">
             <span className="flex-shrink-0 w-12 h-12 bg-primary-400 rounded-full">
@@ -26,19 +31,23 @@ export default function Post({ post }) {
             </span>
             <div className="flex flex-col flex-grow ml-4">
                 <div className="flex">
-                    <span className="font-semibold">{username}</span>
-                    <span className="ml-1">@{username}</span>
-                    <span className="ml-auto text-sm">Just now</span>
+                    <span className="font-semibold">@{username}</span>
+                    <span className="ml-auto text-sm">{post.date_minted}</span>
                 </div>
                 <p className="font-bold">{post.title}</p>
                 <p className="mt-1">{body}</p>
                 <div className="flex items-center justify-center h-64 mt-2 bg-primary-200">
-                    <img alt="image" src={image} className="flex items-center justify-center h-64 " />
+                    {showImage ?
+                        <img alt="image" onError={onError} src={image} className="flex items-center justify-center h-64 " />
+                        :
+                        <img alt="image-not-found" src="./not-found.png" className="flex items-center justify-center h-64 " />
+                    }
                 </div>
-                <div className="flex mt-2 items-center">
+                <div className="flex mt-2 items-center justify-between">
                     <ThumbsUp upvotes={post.upvotes} />
                     <ThumbsDown downvotes={post.downvotes} />
                     <Comments numberOfComments={post.num_comments} />
+                    <p className="font-bold">#{post.category}</p>
                 </div>
             </div>
         </div>

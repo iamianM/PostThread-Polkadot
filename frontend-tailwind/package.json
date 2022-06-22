@@ -16,7 +16,8 @@
     "react-dom": "18.2.0",
     "react-infinite-scroll-component": "^6.1.0",
     "react-query": "^3.39.1",
-    "theme-change": "^2.0.2"
+    "theme-change": "^2.0.2",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.7",

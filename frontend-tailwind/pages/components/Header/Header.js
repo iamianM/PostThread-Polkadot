@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import ThemeSelector from "./Feed/ThemeSelector"
+import ThemeSelector from "./ThemeSelector"
 import UserLink from "./UserLink";
 import Search from "./Search";
+import { themeChange } from 'theme-change'
 
 export default function Header() {
+
+    useEffect(() => {
+        themeChange(false)
+        // 👆 false parameter is required for react project
+    }, [])
 
     return (
         <nav className="w-full py-6 bg-base-100 w-screen">
@@ -14,7 +20,7 @@ export default function Header() {
                     <section className="flex items-center text-inherit space-x-2">
                         <Image src="/postthreadicon.png" height={40} width={40} />
                         <a
-                            href=""
+                            href="/"
                             className="font-bold text-xl  outline-none rounded-lg"
                         >
                             PostThread
@@ -32,20 +38,8 @@ export default function Header() {
                         <li className="relative group">
                             <Search />
                         </li>
-                        <li className="relative group">
-                            <Link
-                                href="/user-area"
-                                className="outline-none rounded-lg"
-                            >
-                                User Area
-                            </Link>
-                            <div className="w-full h-0.5 bg-transparent group-hover:bg-purple-500 transition-al absolute bottom-0" />
-                        </li>
                         <li>
-                            <a
-
-                                className="bg-secondary px-4 py-2 rounded-xl text-white hover:bg-purple-400 active:bg-purple-600 focus:ring focus:ring-purple-500 focus:ring-opacity-25 outline-none"
-                            >
+                            <a className="bg-secondary px-4 py-2 rounded-xl text-white hover:bg-secondary-focus focus:ring focus:ring-purple-500 focus:ring-opacity-25 outline-none">
                                 Login
                             </a>
                         </li>

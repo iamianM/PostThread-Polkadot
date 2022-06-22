@@ -1,6 +1,6 @@
 import '../styles/globals.css'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import Header from './components/Header'
+import Header from './components/Header/Header'
 
 const queryClient = new QueryClient()
 

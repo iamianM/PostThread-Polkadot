@@ -5,11 +5,11 @@ export default function Editor() {
         <>
             <div className="max-w-2xl mx-auto">
                 <form>
-                    <div className="mb-4 w-full bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-                        <div className="flex justify-between items-center py-2 px-3 border-b dark:border-gray-600">
-                            <div className="flex flex-wrap items-center divide-gray-200 sm:divide-x dark:divide-gray-600">
+                    <div className="mb-4 w-full bg-neutral-content rounded-lg border border-neutral-focus">
+                        <div className="flex justify-between items-center py-2 px-3 border-b">
+                            <div className="flex flex-wrap items-center divide-secondary-content sm:divide-x">
                                 <div className="flex items-center space-x-1 sm:pr-4">
-                                    <button type="button" className="p-2 text-gray-500 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
+                                    <button type="button" className="p-2 text-secondary-content rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
                                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd"></path></svg>
                                     </button>
                                     <button type="button" className="p-2 text-gray-500 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
