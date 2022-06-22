@@ -10,7 +10,7 @@ export default function Feed() {
     const { error, isError, isLoading } = useQuery("posts", fetchPosts);
     const [posts, setPosts] = useState([]);
     const [iter, setIter] = useState(1);
-    const numMessagesPerScroll = 100
+    const numMessagesPerScroll = 10
 
 
     async function fetchPosts() {
