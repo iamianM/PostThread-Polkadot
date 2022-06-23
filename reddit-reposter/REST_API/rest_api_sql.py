@@ -15,7 +15,8 @@ import pandas as pd
 import sqlite3
 from substrate_helpers import set_substrate, set_delegate, make_call, addSchema, get_msa_id, \
             get_signature, create_msa_with_delegator, mint_votes, mint_user, get_schemas_from_pattern, \
-            get_content_from_schemas, make_post, follow_user
+            get_content_from_schemas, mint_data, follow_user, \
+            post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId
 from substrateinterface import SubstrateInterface, Keypair
 
 con = sqlite3.connect('../test1.db', check_same_thread=False)
@@ -42,6 +43,7 @@ reddit = praw.Reddit(
 client = ipfshttpclient.connect()
 
 accounts = {'Alice': 1335, 'Charlie': 1337, 'Dave': 1339, 'Eve': 1341, 'Ferdie': 1343}
+path = "/home/chia/polkadot_projects/PostThread-Polkadot/reddit-reposter/"
 
 tags_metadata = [
     {
@@ -97,6 +99,7 @@ def post_get(post_hash: str):
     response = df.to_dict(orient='records')[0]
     return response
 
+
 class PostInput(BaseModel):
     category: str
     username: str = "Charlie"
@@ -120,7 +123,7 @@ def submit_post(postInput: PostInput, user_msa_id: Union[int, None]=None,
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
-    receipt = make_post(postInput.__dict__, user_msa_id, wait_for_inclusion, wait_for_finalization)
+    receipt = mint_data(postInput.__dict__, user_msa_id, post_schemaId, path+'posts/', wait_for_inclusion, wait_for_finalization)
     if wait_for_inclusion and not receipt.error_message:
         return {"Error": receipt.error_message}, 402
 
@@ -240,7 +243,7 @@ class User(BaseModel):
 @app.get('/user/data', tags=["userpage"], summary="Get user data from msa_id or username")
 def user_data_get(
         username: Union[str, None] = Query(default=None, example="Charlie", description='username to get data for'), 
-        user_msa_id: Union[str, None] = Query(default=None, example="1", description="user's msa_id to get data for"),
+        user_msa_id: Union[str, None] = Query(default=None, description="user's msa_id to get data for"),
     ):
     if username is None and user_msa_id is None:
         return HTTPException(status_code=405, detail="Please enter a username or msa_id")
@@ -359,7 +362,7 @@ class FollowOptions(str, Enum):
     follow = "follow"
     unfollow = "unfollow"
     
-@app.post('/user/{follow}', tags=["userpage"], summary="Follow a user")
+@app.post('/user/interact/{follow}', tags=["userpage"], summary="Follow a user")
 def user_follow(
         follow: FollowOptions = Path(default="follow", example="follow", description='Whether to follow or unfollow'), 
         user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id that wants to follow or unfollow"),
@@ -368,9 +371,10 @@ def user_follow(
     if follow == "follow":
         reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with)
     else:
-        reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with, is_unfollow=False)
+        reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with, is_follow=False)
     
-    return {"Success": "You have successfully followed a user"}
+    
+    return {f"Success": f"You have successfully {follow}ed a user"}
 
 @app.post('/user/mint', tags=["userpage"], summary="Mint a new user")
 def user_mint(

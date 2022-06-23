@@ -4,6 +4,8 @@ import substrateinterface
 from substrateinterface import SubstrateInterface, Keypair
 from substrateinterface.exceptions import SubstrateRequestException
 import ipfshttpclient
+from os import listdir
+from os.path import isfile, join
 
 substrate = None
 delegate = None
@@ -155,13 +157,7 @@ def create_msa_with_delegator(provider_wallet, delegator_wallet):
 
 def mint_votes(user_msa_id, num_votes, parent_hash, post_data_hash, parent_type):
     message = '{' + f'"post_hash": "{post_data_hash}", "parent_hash": "{parent_hash}","parent_type": "{parent_type}","num_votes": {num_votes}' + '}'
-    call_params = {
-        "on_behalf_of": user_msa_id,
-        "schema_id": vote_schemaId,
-        "message": message,
-        "payload": message
-    }
-    receipt = make_call("Messages", "add", call_params, delegate, wait_for_inclusion=False, wait_for_finalization=False)
+    _, receipt = mint_data(message, user_msa_id, vote_schemaId, path=None, wait_for_inclusion=True, wait_for_finalization=False)
 
     return receipt
 
@@ -219,15 +215,8 @@ def get_content_from_schemas(schemas, starting_block=None, num_blocks=None):
 def mint_user(username, password, profile_pic, user_wallet, wait_for_inclusion=False, wait_for_finalization=False):      
     user_msa_id = create_msa_with_delegator(delegate, user_wallet)
     user_data = '{' + f'"msa_id": {user_msa_id},"username": "{username}","password": "{password}","profile_pic": "{profile_pic}","wallet_ss58_address": "{user_wallet.ss58_address}"' + '}'
-    
-    call_params = {
-        "on_behalf_of": user_msa_id,
-        "schema_id": user_schemaId,
-        "message": user_data,
-        "payload": user_data
-    }
-    receipt_user = make_call("Messages", "add", call_params, delegate, 
-                                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    user_data_hash, receipt_user = mint_data(user_data, user_msa_id, user_schemaId,
+                                             wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return user_msa_id, receipt_user
 
 def get_user(username=None, user_msa_id=None):
@@ -246,7 +235,8 @@ def get_user(username=None, user_msa_id=None):
 
     return {"Error": "username or user_msa_id does not exist"}
 
-def mint_data(data, user_msa_id, path, wait_for_inclusion=True, wait_for_finalization=False):
+def mint_data(data, user_msa_id, schemaId, path=None, wait_for_inclusion=True, wait_for_finalization=False):
+    if path is not None:
         # write to temp file first to get hash from ipfs
         json.dump(data, open(f"temp.json", "w"))
         data_hash = client.add('temp.json', only_hash=True)["Hash"]
@@ -260,30 +250,24 @@ def mint_data(data, user_msa_id, path, wait_for_inclusion=True, wait_for_finaliz
 
         json.dump(data, open(file, "w"))
         res_post = client.add(file)
-        data_hash = res_post["Hash"]
+        message = res_post["Hash"]
+    else:
+        message = data
 
-        call_params = {
-            "on_behalf_of": user_msa_id,
-            "schema_id": post_schemaId,
-            "message": f"{data_hash}",
-            "payload": f"{data_hash}",
-        }
-        receipt_post = make_call("Messages", "add", call_params, delegate, 
-                            wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    call_params = {
+        "on_behalf_of": user_msa_id,
+        "schema_id": schemaId,
+        "message": f"{message}",
+        "payload": f"{message}",
+    }
+    receipt_post = make_call("Messages", "add", call_params, delegate, 
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
 
-        return data_hash, receipt_post
+    return message, receipt_post
     
 
 def follow_user(protagonist_msa_id, antagonist_msa_id, is_follow=True, wait_for_inclusion=False, wait_for_finalization=False):
     follow = "follow" if is_follow else "unfollow"
     message = '{' + f'"protagonist_msa_id": {protagonist_msa_id},"antagonist_msa_id": "{antagonist_msa_id}","event": "{follow}"' + '}'
-    
-    call_params = {
-        "on_behalf_of": protagonist_msa_id,
-        "schema_id": follow_schemaId,
-        "message": message,
-        "payload": message
-    }
-    receipt_follow = make_call("Messages", "add", call_params, delegate, 
-                                            wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    _, receipt_follow = mint_data(message, protagonist_msa_id, follow_schemaId, path=None, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return receipt_follow
