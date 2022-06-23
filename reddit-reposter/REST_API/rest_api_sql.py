@@ -43,7 +43,7 @@ reddit = praw.Reddit(
 client = ipfshttpclient.connect()
 
 accounts = {'Alice': 1335, 'Charlie': 1337, 'Dave': 1339, 'Eve': 1341, 'Ferdie': 1343}
-path = "/home/chia/polkadot_projects/PostThread-Polkadot/reddit-reposter/"
+path = "/tmp/"
 
 tags_metadata = [
     {
