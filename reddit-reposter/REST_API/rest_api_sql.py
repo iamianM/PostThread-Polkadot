@@ -6,15 +6,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from enum import Enum
 from typing import Union
 from flask import jsonify
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, HTTPException
 from pydantic import BaseModel, HttpUrl
 
+import math
 import re, praw, json, ipfshttpclient, time, datetime
 import pandas as pd
 import sqlite3
 from substrate_helpers import set_substrate, set_delegate, make_call, addSchema, get_msa_id, \
             get_signature, create_msa_with_delegator, mint_votes, mint_user, get_schemas_from_pattern, \
-            get_content_from_schemas, get_user, make_post
+            get_content_from_schemas, make_post, follow_user
 from substrateinterface import SubstrateInterface, Keypair
 
 con = sqlite3.connect('../test1.db', check_same_thread=False)
@@ -40,6 +41,7 @@ reddit = praw.Reddit(
 
 client = ipfshttpclient.connect()
 
+accounts = {'Alice': 1335, 'Charlie': 1337, 'Dave': 1339, 'Eve': 1341, 'Ferdie': 1343}
 
 tags_metadata = [
     {
@@ -90,14 +92,14 @@ def post_get(post_hash: str):
     '''
     df = pd.read_sql_query(query, con)
     if df.size == 0:
-        return 400
+        return HTTPException(status_code=404, detail="Post not found")
 
     response = df.to_dict(orient='records')[0]
     return response
 
 class PostInput(BaseModel):
     category: str
-    username: str = "test1"
+    username: str = "Charlie"
     profile_pic: str
     title: str
     body: str
@@ -115,7 +117,7 @@ def submit_post(postInput: PostInput, user_msa_id: Union[int, None]=None,
     if user_msa_id is None:
         df = get_user(username=postInput.username)
         if df.size == 0:
-            return 401
+            return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
     receipt = make_post(postInput.__dict__, user_msa_id, wait_for_inclusion, wait_for_finalization)
@@ -128,13 +130,19 @@ class SortOptions(str, Enum):
     top = "top"
     new = "new"
 
-@app.get('/posts/{page_number}/{num_posts}', tags=["frontpage"], summary="Get list of posts to display on frontpage")
+@app.get('/posts/{page_number}/{num_posts}', tags=["frontpage"], summary="Get list of posts to display on frontpage",
+         description="""
+         Used to get posts to populate the frontpage. page_number will shift results for subsequent calls (i.e. as when a user is scrolling)
+         Ex: page_number = 3 and num_posts equals 10 => you will get the top 21-30th posts.
+         Input a category to limit posts to that category. sort_by top or new posts. 
+         minutes_filter is used to filter posts that were created within the last X minutes.
+         """)
 def posts_get(
-            page_number: int = Path(default=1, description='how many num_posts to shift output by'), 
-            num_posts: int = Path(default=10, description='How many posts to return'), 
+            page_number: int = Path(default=1, example=1, description='how many num_posts to shift output by'), 
+            num_posts: int = Path(default=10, example=10, description='How many posts to return'), 
             category: Union[str, None] = Query(default=None, description='Category to filter with'), 
-            sort_by: Union[SortOptions, None] = Query(default=None, description='Sort by (top or new)'), 
-            minutes_filter: Union[int, None] = Query(default=None, description='Number of minutes from now to filter by. Post older will be dropped'), 
+            sort_by: Union[SortOptions, None] = Query(default=None, example="top", description='Sort by (top or new)'), 
+            minutes_filter: Union[int, None] = Query(default=None, example=60*24, description='Number of minutes from now to filter by. Post older will be dropped'), 
         ):
     if minutes_filter is None:
         minutes_filter = 60*24
@@ -168,18 +176,16 @@ def posts_get(
     '''
     df = pd.read_sql_query(query, con)
     response = df.to_dict(orient='records')
-    # response = jsonify(df.to_dict(orient='records'))
-    # response.headers.add('Access-Control-Allow-Origin', '*')
     
     return response
 
 @app.get('/comments/{post_hash}/{page_number}/{num_comments}', tags=["postpage"], summary="Get list of comments to display on post page.")
 def comments(
             post_hash: str, 
-            page_number: int = Path(default=1, description='how many num_comments to shift output by'),
-            num_comments: int = Path(default=10, description='How many comments to return'),  
-            sort_by: Union[str, None] = Query(default=None, description='Sort by (top or new)'), 
-            minutes_filter: Union[int, None] = Query(default=None, description='Number of minutes from now to filter by. Post older will be dropped'), 
+            page_number: int = Path(default=1, example=1, description='how many num_comments to shift output by'),
+            num_comments: int = Path(default=10, example=10, description='How many comments to return'),  
+            sort_by: Union[str, None] = Query(default=None, example="top", description='Sort by (top or new)'), 
+            minutes_filter: Union[int, None] = Query(default=None, example=24*60, description='Number of minutes from now to filter by. Post older will be dropped'), 
         ):
     if minutes_filter is None:
         minutes_filter = 60*24
@@ -216,8 +222,6 @@ def get_user(username=None, user_msa_id=None):
         where = f"WHERE user.username = '{username}'"
     if user_msa_id is not None:
         where = f"WHERE user.msa_id = '{user_msa_id}'"
-    if where is None:
-        return pd.DatFrame([])
 
     query = f'''
     SELECT * FROM user 
@@ -227,24 +231,157 @@ def get_user(username=None, user_msa_id=None):
     df = pd.read_sql_query(query, con)
     return df
 
-@app.get('/user/data', tags=["userpage"], summary="Get user data (including exp and level) from msa_id or username")
-def user_get(username: Union[str, None] = None, user_msa_id: Union[str, None] = None):
+class User(BaseModel):
+    name: str
+    description: Union[str, None] = None
+    price: float
+    tax: float = 10.5
+
+@app.get('/user/data', tags=["userpage"], summary="Get user data from msa_id or username")
+def user_data_get(
+        username: Union[str, None] = Query(default=None, example="Charlie", description='username to get data for'), 
+        user_msa_id: Union[str, None] = Query(default=None, example="1", description="user's msa_id to get data for"),
+    ):
     if username is None and user_msa_id is None:
-        return 400
+        return HTTPException(status_code=405, detail="Please enter a username or msa_id")
 
     df = get_user(username, user_msa_id)
 
     if df.size == 0:
-        return 401
+        return HTTPException(status_code=404, detail="User not found")
     
     response = df.to_dict(orient='records')[0]
+    if username is not None and user_msa_id is not None:
+        if response['username'] != response['msa_id']:
+            return HTTPException(status_code=406, detail="Given username and msa_id do not match")
+        
     return response
 
+rewards = {"post": 100, "comment": 10, "vote": 1, "user": 1000, "follow": 5, "link": 400}
+def xp_to_level(xp):
+    return math.ceil(math.log(xp/368599, 1.101141)) + 61
+
+def level_to_xp(level): 
+    return 368599 * 1.101141**(level-61)
+
+class UserLevel(BaseModel):
+    exp: int = 0
+    level: int = 0
+    exp_to_next_level: int = level_to_xp(1)
+
+@app.get('/user/level', tags=["userpage"], summary="Get user exp and level from msa_id", response_model=UserLevel)
+def user_level_get(
+        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
+    ):    
+    query = f'''
+    SELECT user.*, posts.count AS post_count, comments.count AS comment_count, votes.count AS vote_count, 
+            follows.count AS follow_count
+    FROM user
+    LEFT JOIN (
+        SELECT COUNT(*) AS count, msa_id_from_query 
+        FROM post
+        WHERE msa_id_from_query = {user_msa_id}
+    ) posts ON user.msa_id_from_query = posts.msa_id_from_query 
+    LEFT JOIN (
+        SELECT COUNT(*) AS count, msa_id_from_query 
+        FROM comment
+        WHERE msa_id_from_query = {user_msa_id}
+    ) comments ON user.msa_id_from_query = comments.msa_id_from_query
+    LEFT JOIN (
+        SELECT COUNT(*) AS count, msa_id_from_query 
+        FROM vote
+        WHERE msa_id_from_query = {user_msa_id}
+    ) votes ON user.msa_id_from_query = votes.msa_id_from_query
+    LEFT JOIN (
+        SELECT COUNT(*) AS count, msa_id_from_query 
+        FROM follow
+        WHERE msa_id_from_query = {user_msa_id}
+    ) follows ON user.msa_id_from_query = follows.msa_id_from_query
+    WHERE user.msa_id_from_query = {user_msa_id} 
+    '''
+    df = pd.read_sql_query(query, con).fillna(0)
+    
+    userLevel = UserLevel()
+    userLevel.exp = 0
+    for k, v in rewards.items():
+        if k == 'user':
+            userLevel.exp += df.shape[0] * v
+            continue
+        if k == 'link':
+            continue
+        userLevel.exp += df[f'{k}_count'] * v
+    
+    userLevel.level = xp_to_level(userLevel.exp)
+    userLevel.exp_to_next_level = level_to_xp(userLevel.level + 1)
+    
+    return userLevel
+    
+class FollowersOptions(str, Enum):
+    followers = "followers"
+    followering = "following"
+    
+@app.get('/user/{followers}', tags=["userpage"], summary="Get a users followers or following")
+def user_followers_get(
+        followers: FollowersOptions = Path(default="followers", example="followers", description='Whether to get followers or following'),
+        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get followers or following of"),
+    ):
+    if followers == "followers":
+        where_var = "protagonist_msa_id"
+        select_var = "antagonist_msa_id"
+    else:
+        where_var = "antagonist_msa_id"
+        select_var = "protagonist_msa_id"
+        
+    query = f'''
+    SELECT followers.{followers}_msa_id, date_followed, username, password, profile_pic, wallet_ss58_address, date_minted
+    FROM user
+    INNER JOIN (
+        SELECT follow.{where_var}, follow.{select_var} AS {followers}_msa_id, follow.date_minted AS date_followed
+        FROM follow,
+            (SELECT protagonist_msa_id, antagonist_msa_id, MAX(date_minted) AS date_minted
+                FROM follow
+                WHERE {where_var} == {user_msa_id}
+                GROUP BY protagonist_msa_id, antagonist_msa_id) f2
+        WHERE follow.protagonist_msa_id=f2.protagonist_msa_id 
+        AND follow.antagonist_msa_id=f2.antagonist_msa_id
+        AND follow.date_minted=f2.date_minted
+        AND follow.event = 'follow'
+        AND follow.{where_var} == {user_msa_id}
+    ) followers
+    ON user.msa_id_from_query = followers.{followers}_msa_id
+    '''
+    df = pd.read_sql_query(query, con)
+    response = df.to_dict(orient='records')
+    return response
+
+
+class FollowOptions(str, Enum):
+    follow = "follow"
+    unfollow = "unfollow"
+    
+@app.post('/user/{follow}', tags=["userpage"], summary="Follow a user")
+def user_follow(
+        follow: FollowOptions = Path(default="follow", example="follow", description='Whether to follow or unfollow'), 
+        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id that wants to follow or unfollow"),
+        user_msa_id_to_interact_with: str = Query(default=accounts['Dave'], example=accounts['Dave'], description="user's msa_id to follow or unfollow"),
+    ):
+    if follow == "follow":
+        reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with)
+    else:
+        reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with, is_unfollow=False)
+    
+    return {"Success": "You have successfully followed a user"}
+
 @app.post('/user/mint', tags=["userpage"], summary="Mint a new user")
-def user_post(username: str, password: str, profile_pic: HttpUrl):
+def user_mint(
+        username: str = Query(default="test", example="Charlie", description='username to mint'),
+        password: str = Query(default="password", example="password", description="user's password"), 
+        profile_pic: HttpUrl = Query(default=None, example="https://www.redditstatic.com/avatars/defaults/v2/avatar_default_7.png", 
+                                     description="user's profile picture"),
+    ):
     df = get_user(username, None)
     if df.size > 0:
-        return 400
+        return HTTPException(status_code=406, detail="Username already exists")
     # override password for testing
     password = "password"
     user_wallet = Keypair.create_from_uri('//' + username + password)
@@ -253,8 +390,8 @@ def user_post(username: str, password: str, profile_pic: HttpUrl):
 
 @app.post('/user/link', tags=["userpage"], summary="Link an already verified account (email, social, etc)")
 def user_post(
-            account_type: str = Query(description='Type of linked account (E.g: facebook, gmail, reddit, etc'),
-            account_value: str = Query(description='Value of linked account (E.g: example@gamil.com, redditorusername, etc'),
+            account_type: str = Query(example='gmail', description='Type of linked account (E.g: facebook, gmail, reddit, etc'),
+            account_value: str = Query(example='example@gmail.com', description='Value of linked account (E.g: example@gamil.com, redditorusername, etc'),
         ):
     return 200
 

@@ -9,7 +9,7 @@ substrate = None
 delegate = None
 client = ipfshttpclient.connect()
 
-post_schemaId, comment_schemaId, vote_schemaId, user_schemaId = 155, 156, 159, 160
+post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId = 155, 156, 159, 160, 161
 
 def set_substrate(_substrate):
     global substrate
@@ -31,10 +31,11 @@ def make_call(call_module, call_function, call_params, keypair, wait_for_inclusi
     try:
         receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
         print("Extrinsic '{}' sent and included in block '{}'".format(receipt.extrinsic_hash, receipt.block_hash))
+        return receipt
 
     except SubstrateRequestException as e:
         print("Failed to send: {}".format(e))
-    return receipt
+        return None
 
 def addSchema(schema, check=True, create=True, wait_for_inclusion=True, wait_for_finalization=False):
     schemaId = None
@@ -66,13 +67,13 @@ def addSchema(schema, check=True, create=True, wait_for_inclusion=True, wait_for
                 schemaId = event['event']['attributes'][1]
                 return schemaId
        
-        # didn't find msa in events so call function to check for msa
+        # didn't find schemaId in events so call function to check for schemaId
         while (schemaId is None):
             schemaId = addSchema(schema, check=True, create=False)
             
     return schemaId
 
-def get_msa_id(wallet, create=True, wait_for_inclusion=True, wait_for_finalization=False):
+def get_msa_id(wallet, create=False):
     msa_key = substrate.query(
         module='Msa',
         storage_function='KeyInfoOf',
@@ -80,15 +81,23 @@ def get_msa_id(wallet, create=True, wait_for_inclusion=True, wait_for_finalizati
     )
     
     if not create:
-        return None
+        if msa_key.value is None:
+            return None
+        else:
+            return msa_key.value['msa_id']
 
     if msa_key == None:
-        make_call("Msa", "create", {}, wallet, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
-        msa_key = substrate.query(
-            module='Msa',
-            storage_function='KeyInfoOf',
-            params=[wallet.ss58_address]
-        )
+        receipt = make_call("Msa", "create", {}, wallet)
+        for event in receipt.triggered_events:
+            event = event.decode()
+            if event['event']['module_id'] == 'MsaCreated':
+                msa_id = event['event']['attributes'][1]
+                return msa_id
+       
+        # didn't find msa in events so call function to check for msa
+        while (msa_id is None):
+            msa_id = get_msa_id(schema, create=False)
+        
 
     msa_id = msa_key['msa_id'].decode()
     return msa_id
@@ -105,7 +114,23 @@ def get_signature(payload, signer):
     # The provider address signs the payload, so in this case alice
     return signer.sign(payload_encoded)
 
-def create_msa_with_delegator(provider_wallet, delegator_wallet):    
+def add_delegate(msa_id, user_wallet):
+    payload_raw = { "authorized_msa_id": msa_id, "permission": 0 }
+    signature = get_signature(payload_raw, delegate)
+    call_params = {
+        "provider_key": delegate.ss58_address,
+        "proof": {"Sr25519": "0x" + signature.hex()},
+        "add_provider_payload": payload_raw
+    }
+
+    receipt = make_call("Msa", "add_provider_to_msa", call_params, user_wallet, wait_for_inclusion=False, wait_for_finalization=False)
+    return receipt
+
+def create_msa_with_delegator(provider_wallet, delegator_wallet):
+    msa_id = get_msa_id(delegator_wallet, create=False)
+    if msa_id is not None:
+        return msa_id
+            
     provider_msa_id = get_msa_id(provider_wallet)
 
     payload_raw = { "authorized_msa_id": provider_msa_id, "permission": 0 }
@@ -125,6 +150,8 @@ def create_msa_with_delegator(provider_wallet, delegator_wallet):
         if event['event']['module_id'] == 'Msa':
             msa_id = event['event']['attributes'][0]
             return msa_id
+        
+    return msa_id
 
 def mint_votes(user_msa_id, num_votes, parent_hash, post_data_hash, parent_type):
     message = '{' + f'"post_hash": "{post_data_hash}", "parent_hash": "{parent_hash}","parent_type": "{parent_type}","num_votes": {num_votes}' + '}'
@@ -189,7 +216,7 @@ def get_content_from_schemas(schemas, starting_block=None, num_blocks=None):
             content_jsons[schema] = content['result']['content']
     return content_jsons
 
-def mint_user(username, password, profile_pic, user_wallet):      
+def mint_user(username, password, profile_pic, user_wallet, wait_for_inclusion=False, wait_for_finalization=False):      
     user_msa_id = create_msa_with_delegator(delegate, user_wallet)
     user_data = '{' + f'"msa_id": {user_msa_id},"username": "{username}","password": "{password}","profile_pic": "{profile_pic}","wallet_ss58_address": "{user_wallet.ss58_address}"' + '}'
     
@@ -199,7 +226,8 @@ def mint_user(username, password, profile_pic, user_wallet):
         "message": user_data,
         "payload": user_data
     }
-    receipt_user = make_call("Messages", "add", call_params, delegate, wait_for_inclusion=False, wait_for_finalization=False)
+    receipt_user = make_call("Messages", "add", call_params, delegate, 
+                                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return user_msa_id, receipt_user
 
 def get_user(username=None, user_msa_id=None):
@@ -218,22 +246,44 @@ def get_user(username=None, user_msa_id=None):
 
     return {"Error": "username or user_msa_id does not exist"}
 
-def make_post(data, user_msa_id, wait_for_inclusion=True, wait_for_finalization=False):
+def mint_data(data, user_msa_id, path, wait_for_inclusion=True, wait_for_finalization=False):
         # write to temp file first to get hash from ipfs
         json.dump(data, open(f"temp.json", "w"))
-        post_data_hash = client.add('temp.json', only_hash=True)["Hash"]
+        data_hash = client.add('temp.json', only_hash=True)["Hash"]
+        
+        # use hash to check if we already added this post to the blockchain
+        # if so then skip
+        data_files = [f for f in listdir(path) if isfile(join(path, f))]
+        file = f"{path}{data_hash}.json"
+        if file in data_files:
+            return data_hash, None
 
-        json.dump(data, open(f"/home/chia/polkadot_projects/PostThread-Polkadot/reddit-reposter/posts/{post_data_hash}.json", "w"))
-        res_post = client.add(f"/home/chia/polkadot_projects/PostThread-Polkadot/reddit-reposter/posts/{post_data_hash}.json")
-        post_data_hash = res_post["Hash"]
+        json.dump(data, open(file, "w"))
+        res_post = client.add(file)
+        data_hash = res_post["Hash"]
 
         call_params = {
             "on_behalf_of": user_msa_id,
             "schema_id": post_schemaId,
-            "message": f"{post_data_hash}",
-            "payload": f"{post_data_hash}",
+            "message": f"{data_hash}",
+            "payload": f"{data_hash}",
         }
         receipt_post = make_call("Messages", "add", call_params, delegate, 
                             wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
 
-        return receipt_post
+        return data_hash, receipt_post
+    
+
+def follow_user(protagonist_msa_id, antagonist_msa_id, is_follow=True, wait_for_inclusion=False, wait_for_finalization=False):
+    follow = "follow" if is_follow else "unfollow"
+    message = '{' + f'"protagonist_msa_id": {protagonist_msa_id},"antagonist_msa_id": "{antagonist_msa_id}","event": "{follow}"' + '}'
+    
+    call_params = {
+        "on_behalf_of": protagonist_msa_id,
+        "schema_id": follow_schemaId,
+        "message": message,
+        "payload": message
+    }
+    receipt_follow = make_call("Messages", "add", call_params, delegate, 
+                                            wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    return receipt_follow
