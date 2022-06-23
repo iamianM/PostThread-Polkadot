@@ -1,27 +1,67 @@
-import React, { useState } from 'react'
+import React from 'react'
 import Image from 'next/image'
+import { useToasts } from "react-toast-notifications";
 
 export default function Editor() {
 
-    const [text, setText] = useState('')
-    const [title, setTitle] = useState('')
-    const [isNSFW, setIsNSFW] = useState(true)
-    const [url, setUrl] = useState('')
-    const [category, setCategory] = useState('')
+    const { addToast } = useToasts()
 
-    async function handleSubmit() {
+    const handleSubmit = async (event) => {
+        // Stop the form from submitting and refreshing the page.
+        event.preventDefault()
 
+        const post = {
+            category: event.target.category.value,
+            username: "Charlie",
+            profile_pic: "",
+            title: event.target.title.value,
+            body: event.target.body.value,
+            url: event.target.url.value,
+            is_nsfw: event.target.isNSFW.value,
+        }
+
+        console.log(JSON.stringify(post))
+
+        try {
+            const response = await fetch(`api/submit?` + new URLSearchParams({
+                user_msa_id: 1337,
+                wait_for_inclusion: false,
+                wait_for_finalization: false
+            }), {
+                method: 'POST',
+                body: JSON.stringify({ post }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+            )
+
+            const data = response.json()
+            console.log(data)
+
+            addToast("Post created", {
+                appearance: 'success',
+                autoDismiss: true,
+            })
+
+        } catch (error) {
+            console.log(error)
+            addToast("Post creation failed", {
+                appearance: 'error',
+                autoDismiss: true,
+            })
+        }
     }
 
 
     return (
         <>
             <div className="max-w-2xl mx-auto">
-                <div class="text-center bg-base-100 text-inherit py-5 px-6">
-                    <h1 class="text-2xl font-bold mt-0 mb-6">Create a new post</h1>
+                <div className="text-center bg-base-100 text-inherit py-5 px-6">
+                    <h1 className="text-2xl font-bold mt-0 mb-6">Create a new post</h1>
                 </div>
-                <input className="h-12 px-2 border-2 w-full border-primary rounded-xl bg-base-100 text-inherit" type="input" placeholder="Title..." required />
                 <form onSubmit={handleSubmit}>
+                    <input className="h-12 px-2 border-2 w-full border-primary rounded-xl bg-base-100 text-inherit" type="text" id="title" placeholder="Title..." required />
                     <div className="mb-4 w-full bg-primary my-5 rounded-xl border border-neutral-focus">
                         <div className="flex justify-between items-center py-2 px-3 border-b">
                             <div className="flex flex-wrap items-center">
@@ -29,20 +69,20 @@ export default function Editor() {
                                     <Image src="/plus-18.png" width={22} height={22} />
                                 </div>
                                 <div className="flex flex-wrap items-center space-x-1 sm:pl-4">
-                                    <select className="focus:outline-none h-5 rounded-md px-2 border-sm bg-secondary">
+                                    <select className="focus:outline-none h-5 rounded-md px-2 border-sm bg-secondary" id="isNSFW">
                                         <option value="true">true</option>
                                         <option value="false">false</option>
                                     </select>
                                 </div>
                             </div>
-                            <input className="h-8 px-2 border-2 border-primary rounded-xl bg-base-100 text-inherit" type="input" placeholder="Category..." required />
+                            <input className="h-8 px-2 border-2 border-primary rounded-xl bg-base-100 text-inherit" type="text" id="category" placeholder="Category..." required />
                         </div>
                         <div className="py-2 px-4 bg-base-200 rounded-b-xl">
                             <label htmlFor="editor" className="sr-only">Publish post</label>
-                            <textarea id="editor" rows="8" className="block px-0 w-full text-sm text-inherit bg-base-200 border-0 focus:ring-0 " placeholder="Write a post..." required></textarea>
+                            <textarea id="body" rows="8" className="block px-0 w-full text-sm text-inherit bg-base-200 border-0 focus:ring-0 " placeholder="Write a post..." required></textarea>
                         </div>
                     </div>
-                    <input className="h-8 px-2 border-2 w-full border-primary rounded-xl bg-base-100 text-inherit" type="input" placeholder="Image URL..." />
+                    <input className="h-8 px-2 border-2 w-full border-primary rounded-xl bg-base-100 text-inherit" type="text" id="url" placeholder="Image URL..." />
                     <button type="submit" className="inline-flex items-center px-5 my-5 py-2.5 text-sm font-medium text-center text-inherit bg-primary rounded-lg hover:bg-primary-focus">
                         Publish post
                     </button>

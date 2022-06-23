@@ -44,7 +44,7 @@ export default function Feed() {
                     </div>
                     <div className="flex-grow h-0 overflow-auto">
                         <div className="flex w-full p-8 border-b border-neutral">
-                            {/* {isLoading ?
+                            {isLoading ?
                                 <Loader text="Loading posts..." />
                                 :
                                 <div>
@@ -56,13 +56,8 @@ export default function Feed() {
                                         <DisplayPosts posts={posts} />
                                     </InfiniteScroll>
                                 </div>
-                            } */}
+                            }
                         </div>
-                        {/* {showModal ? (
-                            <div className="grid h-screen place-items-center z-10">
-                                <Login setShowModal={setShowModal} />
-                            </div>
-                        ) : null} */}
                     </div>
                 </div>
                 <div className="flex flex-col flex-shrink-0 w-1/4 pl-4">
