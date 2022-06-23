@@ -4,15 +4,29 @@ import Image from "next/image";
 import ThemeSelector from "./ThemeSelector"
 import UserLink from "./UserLink";
 import Search from "./Search";
-import { themeChange } from 'theme-change'
 import LoginButton from "../Buttons/LoginButton";
+import LogoutButton from "../Buttons/LogoutButton";
 
 export default function Header() {
 
+    const [username, setUsername] = useState("");
+
     useEffect(() => {
-        themeChange(false)
-        // 👆 false parameter is required for react project
-    }, [])
+
+        function checkUserData() {
+            const item = localStorage.getItem("username")
+            console.log("item" + item)
+            setUsername(item)
+            console.log("changed")
+        }
+
+        checkUserData()
+        window.addEventListener("storage", () => checkUserData())
+
+        return () => {
+            window.removeEventListener("storage", () => checkUserData())
+        }
+    }, [username])
 
     return (
         <nav className="w-full py-6 bg-base-100 w-screen">
@@ -33,14 +47,14 @@ export default function Header() {
                         <li className="relative group">
                             <ThemeSelector />
                         </li>
-                        <li className="relative group">
-                            <UserLink />
-                        </li>
+                        {username !== "" ? <li className="relative group">
+                            <UserLink username={username} />
+                        </li> : <></>}
                         <li className="relative group">
                             <Search />
                         </li>
                         <li>
-                            <LoginButton />
+                            {username !== "" ? <LogoutButton /> : <LoginButton />}
                         </li>
                     </ul>
                     <button className="flex md:hidden hover:bg-gray-100 p-2 rounded-full transition-all focus:ring focus:ring-purple-500 focus:ring-opacity-25 active:bg-gray-200 outline-none">

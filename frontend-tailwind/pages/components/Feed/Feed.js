@@ -15,9 +15,7 @@ export default function Feed() {
 
 
     async function fetchPosts() {
-        let headers = new Headers();
-        headers.append('Access-Control-Allow-Origin', '*');
-        const response = await fetch(`${CONSTANTS.server}/posts/${iter}/${numMessagesPerScroll}`, { headers: headers })
+        const response = await fetch(`api/posts/${iter}/${numMessagesPerScroll}`)
         const data = await response.json()
         setPosts(posts.concat(data));
         setIter(prevIter => prevIter + 1);
@@ -46,7 +44,7 @@ export default function Feed() {
                     </div>
                     <div className="flex-grow h-0 overflow-auto">
                         <div className="flex w-full p-8 border-b border-neutral">
-                            {isLoading ?
+                            {/* {isLoading ?
                                 <Loader text="Loading posts..." />
                                 :
                                 <div>
@@ -58,7 +56,7 @@ export default function Feed() {
                                         <DisplayPosts posts={posts} />
                                     </InfiniteScroll>
                                 </div>
-                            }
+                            } */}
                         </div>
                         {/* {showModal ? (
                             <div className="grid h-screen place-items-center z-10">
