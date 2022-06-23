@@ -5,6 +5,7 @@ import ThemeSelector from "./ThemeSelector"
 import UserLink from "./UserLink";
 import Search from "./Search";
 import { themeChange } from 'theme-change'
+import LoginButton from "../Buttons/LoginButton";
 
 export default function Header() {
 
@@ -39,9 +40,7 @@ export default function Header() {
                             <Search />
                         </li>
                         <li>
-                            <a className="bg-secondary px-4 py-2 rounded-xl text-white hover:bg-secondary-focus focus:ring focus:ring-purple-500 focus:ring-opacity-25 outline-none">
-                                Login
-                            </a>
+                            <LoginButton />
                         </li>
                     </ul>
                     <button className="flex md:hidden hover:bg-gray-100 p-2 rounded-full transition-all focus:ring focus:ring-purple-500 focus:ring-opacity-25 active:bg-gray-200 outline-none">

@@ -17,7 +17,7 @@ export default function Feed() {
     async function fetchPosts() {
         let headers = new Headers();
         headers.append('Access-Control-Allow-Origin', '*');
-        const response = await fetch(`${CONSTANTS.server}/posts/${iter}/${numMessagesPerScroll}`, {headers: headers})
+        const response = await fetch(`${CONSTANTS.server}/posts/${iter}/${numMessagesPerScroll}`, { headers: headers })
         const data = await response.json()
         setPosts(posts.concat(data));
         setIter(prevIter => prevIter + 1);
@@ -60,6 +60,11 @@ export default function Feed() {
                                 </div>
                             }
                         </div>
+                        {/* {showModal ? (
+                            <div className="grid h-screen place-items-center z-10">
+                                <Login setShowModal={setShowModal} />
+                            </div>
+                        ) : null} */}
                     </div>
                 </div>
                 <div className="flex flex-col flex-shrink-0 w-1/4 pl-4">

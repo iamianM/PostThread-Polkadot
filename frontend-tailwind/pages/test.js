@@ -1,4 +1,6 @@
 import React from 'react'
+import Login from './components/Login'
+import Modal from './components/Modal'
 
 export default function Test() {
 
@@ -14,7 +16,11 @@ export default function Test() {
     }
 
     const mintPost = async () => {
-        const response = await fetch('/api/submit?user_msa_id=1&wait_for_inclusion=false&wait_for_finalization=false', {
+        const response = await fetch('/api/submit?' + new URLSearchParams({
+            user_msa_id: 1,
+            wait_for_inclusion: false,
+            wait_for_finalization: false
+        }), {
             method: 'POST',
             body: JSON.stringify({ postToMint }),
             headers: {
@@ -27,6 +33,10 @@ export default function Test() {
 
 
     return (
-        <button onClick={mintPost}>Mint Post</button>
+        <>
+            {/* <button onClick={mintPost}>Mint Post</button> */}
+
+            <Modal />
+        </>
     )
 }
