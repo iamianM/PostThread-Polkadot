@@ -1,9 +1,12 @@
 import React from "react";
-import Link from "next/link";
+import { isImage } from "../../utils/Utils";
 
 export default function UserLink() {
+
   const username = localStorage.getItem("username");
   const profile_pic = localStorage.getItem("profile_pic");
+  const imageSrc = "/postthreadicon.png";
+  const image = isImage(profile_pic) ? profile_pic : imageSrc
 
   return (
     <a
@@ -11,7 +14,8 @@ export default function UserLink() {
       href="/profile"
     >
       <span className="flex-shrink-0 w-10 h-10 bg-base-300 rounded-full">
-        {profile_pic}
+        <img alt="profil" src={image}
+          className="mx-auto object-cover rounded-full" />
       </span>
       <div className="flex flex-col ml-2">
         <span className="mt-1 text-sm font-semibold leading-none">

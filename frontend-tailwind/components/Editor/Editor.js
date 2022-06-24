@@ -12,8 +12,6 @@ export default function Editor() {
 
         const post = {
             category: event.target.category.value,
-            username: "Charlie",
-            profile_pic: "",
             title: event.target.title.value,
             body: event.target.body.value,
             url: event.target.url.value,
@@ -21,12 +19,13 @@ export default function Editor() {
         }
 
         console.log(JSON.stringify(post))
+        const id = localStorage.getItem("msa_id")
 
         try {
-            const response = await fetch(`api/submit?` + new URLSearchParams({
-                user_msa_id: 1337,
-                wait_for_inclusion: false,
-                wait_for_finalization: false
+            const response = await fetch(`api/submit/post?` + new URLSearchParams({
+                user_msa_id: id,
+                wait_for_inclusion: true,
+                wait_for_finalization: true
             }), {
                 method: 'POST',
                 body: JSON.stringify({ post }),
@@ -39,7 +38,7 @@ export default function Editor() {
             const data = response.json()
             console.log(data)
 
-            addToast("Post created", {
+            addToast("Post was created and will finalize on the blockchain soon.", {
                 appearance: 'success',
                 autoDismiss: true,
             })

@@ -1,4 +1,4 @@
-import { CONSTANTS } from '../../constants/Constants';
+import { CONSTANTS } from '../../../constants/Constants';
 
 export default async function handler(req, res) {
     const params = req.query.params

@@ -4,7 +4,6 @@ import Image from "next/image";
 import ThemeSelector from "./ThemeSelector";
 import UserLink from "./UserLink";
 import Search from "./Search";
-import LoginButton from "../Buttons/LoginButton";
 import LogoutButton from "../Buttons/LogoutButton";
 
 export default function Header() {
@@ -14,8 +13,8 @@ export default function Header() {
   useEffect(() => {
 
     function checkUserData() {
-      const item = localStorage.getItem("username");
-      if (item) setUsername(item)
+      const user = localStorage.getItem("username");
+      if (user) setUsername(user)
       else setUsername("")
     }
 

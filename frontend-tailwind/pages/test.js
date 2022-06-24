@@ -1,6 +1,6 @@
 import React from 'react'
-import Login from './components/LoginForm'
-import Modal from './components/Modal'
+import Login from '../components/LoginForm'
+import Modal from '../components/Modal'
 
 export default function Test() {
 

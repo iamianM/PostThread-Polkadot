@@ -1,12 +1,10 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useToasts } from "react-toast-notifications";
-import { useRouter } from 'next/router'
 
 export default function LoginForm() {
 
     const { addToast } = useToasts()
-    const router = useRouter()
 
     async function fetchUser(username) {
         const response = await fetch(`api/user/data/${username}`)
@@ -66,7 +64,7 @@ export default function LoginForm() {
                                     className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600" />
                             </div>
                             <div className="flex items-baseline justify-between">
-                                <button type="submit" className="px-6 py-2 mt-4 text-white bg-primary rounded-lg hover:bg-primary-focus">Login</button>
+                                <button type="submit" className="px-6 py-2 mt-4 text-base-content bg-primary rounded-lg hover:bg-primary-focus">Login</button>
                                 <a href="#" className="text-sm text-inherit hover:underline">Forgot password?</a>
                             </div>
                         </div>

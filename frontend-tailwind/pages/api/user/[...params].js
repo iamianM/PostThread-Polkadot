@@ -1,4 +1,4 @@
-import { CONSTANTS } from '../../constants/Constants';
+import { CONSTANTS } from '../../../constants/Constants';
 
 // http://localhost:3000/api/user/followers/1337
 // http://localhost:3000/api/user/following/1337

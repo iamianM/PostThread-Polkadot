@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import Comments from '../Buttons/Comments'
 import ThumbsDown from '../Buttons/ThumbsDown'
 import ThumbsUp from '../Buttons/ThumbsUp'
+import { isImage } from '../../utils/Utils'
+import { randomIntFromInterval } from '../../utils/Utils'
 
 export default function Post({ post }) {
 
@@ -14,14 +16,6 @@ export default function Post({ post }) {
     const imageSrc = `https://www.tailwind-kit.com/images/blog/${randomImageNumber}.jpg`
     const image = post.url ? post.url : imageSrc
 
-
-    function randomIntFromInterval(min, max) { // min and max included 
-        return Math.floor(Math.random() * (max - min + 1) + min)
-    }
-
-    function isImage(url) {
-        return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
-    }
 
     const onError = () => {
         setShowImage(false);
@@ -42,7 +36,7 @@ export default function Post({ post }) {
                 <p className="mt-1">{body}</p>
                 <div className="flex items-center justify-center h-64 mt-2 bg-primary-200">
                     {isImage(image) ? (showImage ?
-                        <img alt="image" onError={onError} src={image} className="flex items-center justify-center h-64 "/>
+                        <img alt="image" onError={onError} src={image} className="flex items-center justify-center h-64 " />
                         : <img alt="image-not-found" src="./not-found.png" className="flex items-center justify-center h-64 " />
                     ) : ""
                     }
