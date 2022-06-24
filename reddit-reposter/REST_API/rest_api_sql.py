@@ -13,7 +13,7 @@ import math
 import re, praw, json, ipfshttpclient, time, datetime
 import pandas as pd
 import sqlite3
-from substrate_helpers import set_substrate, set_delegate, make_call, addSchema, get_msa_id, \
+from substrate_helpers import make_call, addSchema, get_msa_id, \
             get_signature, create_msa_with_delegator, mint_votes, mint_user, get_schemas_from_pattern, \
             get_content_from_schemas, mint_data, follow_user, \
             post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId
@@ -23,13 +23,11 @@ con = sqlite3.connect('../test1.db', check_same_thread=False)
 cur = con.cursor()
 
 substrate = SubstrateInterface(
-    url="ws://127.0.0.1:11946",
+    url="ws://127.0.0.1:9944",
     ss58_format=42,
     type_registry_preset='kusama'
 )
 bob = Keypair.create_from_uri('//Bob')
-set_delegate(bob)
-set_substrate(substrate)
 
 reddit_creds = json.load(open("../.reddit_creds.json", "r"))
 reddit = praw.Reddit(
@@ -99,17 +97,14 @@ def post_get(post_hash: str):
     response = df.to_dict(orient='records')[0]
     return response
 
-
 class PostInput(BaseModel):
     category: str
-    username: str = "Charlie"
-    profile_pic: str
     title: str
     body: str
     url: HttpUrl = "http://www.google.com"
     is_nsfw: bool 
     
-@app.post('/submit', tags=["submitpage"], summary="Submit data to mint a post.")
+@app.post('/submit/post', tags=["submitpage"], summary="Submit data to mint a post.")
 def submit_post(postInput: PostInput, user_msa_id: Union[int, None]=None, 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None):
     if wait_for_inclusion is None:
@@ -118,7 +113,7 @@ def submit_post(postInput: PostInput, user_msa_id: Union[int, None]=None,
         wait_for_finalization = False
 
     if user_msa_id is None:
-        df = get_user(username=postInput.username)
+        df = get_user(user_msa_id=user_msa_id)
         if df.size == 0:
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
@@ -128,6 +123,38 @@ def submit_post(postInput: PostInput, user_msa_id: Union[int, None]=None,
         return {"Error": receipt.error_message}, 402
 
     return {"Success": "Post was created and will finalize on the blockchain soon."}
+    
+class CommentInput(BaseModel):
+    post_hash: str = Query(description='Hash of the post to comment on.')
+    parent_comment_hash: Union[str, None] = Query(default=None, description='Hash of the parent comment to comment on.')
+    depth: int = Query(description='How many levels of comments to go down. (comment on a post is 0 depth)')
+    body: str
+    is_nsfw: bool 
+    
+@app.post('/submit/comment', tags=["postpage"], summary="Submit data to mint a comment.")
+def submit_comment(commentInput: CommentInput, user_msa_id: Union[int, None]=None, 
+            wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None):
+    if wait_for_inclusion is None:
+        wait_for_inclusion = False
+    if wait_for_finalization is None:
+        wait_for_finalization = False
+
+    if user_msa_id is None:
+        df = get_user(user_msa_id=user_msa_id)
+        if df.size == 0:
+            return HTTPException(status_code=404, detail="User not found")
+        user_msa_id = df['msa_id'].iloc[0]
+
+    receipt = mint_data(commentInput.__dict__, user_msa_id, post_schemaId, path+'comments/', wait_for_inclusion, wait_for_finalization)
+    if wait_for_inclusion and not receipt.error_message:
+        return {"Error": receipt.error_message}, 402
+
+    return {"Success": "Comment was created and will finalize on the blockchain soon."}
+
+@app.get('/categories', tags=["frontpage"], summary="Get all categories")
+def categories_get():
+    df = pd.read_sql_query("SELECT DISTINCT(category) FROM post", con)
+    return df['category'].tolist()
 
 class SortOptions(str, Enum):
     top = "top"
@@ -145,7 +172,8 @@ def posts_get(
             num_posts: int = Path(default=10, example=10, description='How many posts to return'), 
             category: Union[str, None] = Query(default=None, description='Category to filter with'), 
             sort_by: Union[SortOptions, None] = Query(default=None, example="top", description='Sort by (top or new)'), 
-            minutes_filter: Union[int, None] = Query(default=None, example=60*24, description='Number of minutes from now to filter by. Post older will be dropped'), 
+            minutes_filter: Union[int, None] = Query(default=None, example=60*24, description='Number of minutes from now to filter by. Post older will be dropped'),
+            user_msa_id: Union[int, None] = Query(default=None, example=1, description='Include this to get posts for a specific user'),  
         ):
     if minutes_filter is None:
         minutes_filter = 60*24
@@ -153,6 +181,10 @@ def posts_get(
     category_where = ""
     if category:
         category_where = f"AND post.category = '{category}'"
+
+    user_where = ""
+    if user_msa_id:
+        user_where = f"AND post.msa_id_from_query = {user_msa_id}"
 
     order_by = ""
     if sort_by is None or sort_by == 'top':
@@ -164,6 +196,7 @@ def posts_get(
     upper_bound = page_number * num_posts
 
     date_format = "%m-%d-%Y %H:%M:%S"
+#     date_format = "%Y-%m-%d %H:%M:%S"
     date_time = datetime.datetime.now() - datetime.timedelta(minutes=minutes_filter)
     date_str = date_time.strftime(date_format)
 
@@ -173,7 +206,7 @@ def posts_get(
         SELECT parent_hash, SUM(num_votes) AS total_votes 
         FROM vote GROUP BY parent_hash
     ) votes ON votes.parent_hash = post.ipfs_hash
-    WHERE post.date_minted >= '{date_str}' {category_where}
+    WHERE post.date_minted >= '{date_str}' {category_where} {user_where}
     {order_by}
     LIMIT {lower_bound}, {upper_bound}
     '''

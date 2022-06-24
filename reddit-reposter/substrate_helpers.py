@@ -7,19 +7,16 @@ import ipfshttpclient
 from os import listdir
 from os.path import isfile, join
 
-substrate = None
-delegate = None
+substrate = SubstrateInterface(
+    url="ws://127.0.0.1:9944",
+    ss58_format=42,
+    type_registry_preset='kusama'
+)
+
+delegate = Keypair.create_from_uri('//Bob')
 client = ipfshttpclient.connect()
 
-post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId = 155, 156, 159, 160, 161
-
-def set_substrate(_substrate):
-    global substrate
-    substrate = _substrate
-
-def set_delegate(_delegate):
-    global delegate
-    delegate = _delegate
+post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId = 7, 8, 3, 4, 5
 
 def make_call(call_module, call_function, call_params, keypair, wait_for_inclusion=True, wait_for_finalization=False):
     call = substrate.compose_call(
@@ -76,19 +73,19 @@ def addSchema(schema, check=True, create=True, wait_for_inclusion=True, wait_for
     return schemaId
 
 def get_msa_id(wallet, create=False):
-    msa_key = substrate.query(
+    msa_id = substrate.query(
         module='Msa',
         storage_function='KeyInfoOf',
         params=[wallet.ss58_address]
-    )
+    ).value
     
     if not create:
-        if msa_key.value is None:
+        if msa_id is None:
             return None
         else:
-            return msa_key.value['msa_id']
+            return msa_id['msa_id']
 
-    if msa_key == None:
+    if msa_id == None:
         receipt = make_call("Msa", "create", {}, wallet)
         for event in receipt.triggered_events:
             event = event.decode()
@@ -99,9 +96,9 @@ def get_msa_id(wallet, create=False):
         # didn't find msa in events so call function to check for msa
         while (msa_id is None):
             msa_id = get_msa_id(schema, create=False)
+    else:
+        msa_id = msa_id['msa_id']
         
-
-    msa_id = msa_key['msa_id'].decode()
     return msa_id
 
 def get_signature(payload, signer):
@@ -128,12 +125,12 @@ def add_delegate(msa_id, user_wallet):
     receipt = make_call("Msa", "add_provider_to_msa", call_params, user_wallet, wait_for_inclusion=False, wait_for_finalization=False)
     return receipt
 
-def create_msa_with_delegator(provider_wallet, delegator_wallet):
+def create_msa_with_delegator(provider_wallet, delegator_wallet, wait_for_inclusion=True, wait_for_finalization=False):
     msa_id = get_msa_id(delegator_wallet, create=False)
     if msa_id is not None:
         return msa_id
             
-    provider_msa_id = get_msa_id(provider_wallet)
+    provider_msa_id = get_msa_id(provider_wallet, create=False)
 
     payload_raw = { "authorized_msa_id": provider_msa_id, "permission": 0 }
 
@@ -146,18 +143,24 @@ def create_msa_with_delegator(provider_wallet, delegator_wallet):
     }
 
     # provider signs this
-    receipt = make_call("Msa", "create_sponsored_account_with_delegation", call_params, provider_wallet)
-    for event in receipt.triggered_events:
-        event = event.decode()
-        if event['event']['module_id'] == 'Msa':
-            msa_id = event['event']['attributes'][0]
-            return msa_id
-        
-    return msa_id
+    receipt = make_call("Msa", "create_sponsored_account_with_delegation", call_params, provider_wallet, 
+                                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    
+    if wait_for_inclusion or wait_for_finalization:
+        for event in receipt.triggered_events:
+            event = event.decode()
+            if event['event']['module_id'] == 'Msa':
+                msa_id = event['event']['attributes'][0]
+                return msa_id
+            
+        return msa_id
+    else:
+        return None
 
-def mint_votes(user_msa_id, num_votes, parent_hash, post_data_hash, parent_type):
+def mint_votes(user_msa_id, num_votes, parent_hash, post_data_hash, parent_type, wait_for_inclusion=False, wait_for_finalization=False):
     message = '{' + f'"post_hash": "{post_data_hash}", "parent_hash": "{parent_hash}","parent_type": "{parent_type}","num_votes": {num_votes}' + '}'
-    _, receipt = mint_data(message, user_msa_id, vote_schemaId, path=None, wait_for_inclusion=True, wait_for_finalization=False)
+    _, receipt = mint_data(message, user_msa_id, vote_schemaId, path=None, 
+                           wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
 
     return receipt
 
@@ -212,12 +215,11 @@ def get_content_from_schemas(schemas, starting_block=None, num_blocks=None):
             content_jsons[schema] = content['result']['content']
     return content_jsons
 
-def mint_user(username, password, profile_pic, user_wallet, wait_for_inclusion=False, wait_for_finalization=False):      
-    user_msa_id = create_msa_with_delegator(delegate, user_wallet)
+def mint_user(user_msa_id, username, password, profile_pic, user_wallet, wait_for_inclusion=False, wait_for_finalization=False): 
     user_data = '{' + f'"msa_id": {user_msa_id},"username": "{username}","password": "{password}","profile_pic": "{profile_pic}","wallet_ss58_address": "{user_wallet.ss58_address}"' + '}'
     user_data_hash, receipt_user = mint_data(user_data, user_msa_id, user_schemaId,
                                              wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
-    return user_msa_id, receipt_user
+    return receipt_user
 
 def get_user(username=None, user_msa_id=None):
     user_pattern = re.compile(f"username,password,profile_pic")
