@@ -6,7 +6,7 @@ export default function UserLink() {
   const profile_pic = localStorage.getItem("profile_pic");
 
   return (
-    <Link
+    <a
       className="flex px-3 py-2 mt-2 mt-auto hover:text-base-100 text-lg rounded-lg font-medium hover:bg-secondary"
       href="/profile"
     >
@@ -19,6 +19,6 @@ export default function UserLink() {
         </span>
         <span className="mt-1 text-xs leading-none">@{username}</span>
       </div>
-    </Link>
+    </a>
   );
 }

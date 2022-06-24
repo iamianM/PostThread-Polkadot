@@ -20,22 +20,22 @@ export default function Feed() {
     setIter((prevIter) => prevIter + 1);
   }
 
+
   return (
     <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
       <div className="flex w-full max-w-screen-lg ">
+
         <div className="flex flex-col w-64 py-4 pr-3">
-          <Link
+          <a
             className="px-3 py-2 mt-2 text-lg hover:text-base-100 text-primary font-medium rounded-lg hover:bg-secondary"
-            href="/"
-          >
+            href="/">
             Home
-          </Link>
-          <Link
+          </a>
+          <a
             className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary"
-            href="/discover"
-          >
+            href="/discover">
             Discover
-          </Link>
+          </a>
           {/* <a className="flex px-3 py-2 mt-2 mt-auto hover:text-base-100 text-lg rounded-lg font-medium hover:bg-secondary" href="/profile">
                         <span className="flex-shrink-0 w-10 h-10 bg-base-300 rounded-full"></span>
                         <div className="flex flex-col ml-2">
@@ -54,7 +54,7 @@ export default function Feed() {
           </div>
           <div className="flex-grow h-0 overflow-auto">
             <div className="flex w-full p-8 border-b border-neutral">
-              {isLoading ? (
+              {/* {isLoading ? (
                 <Loader text="Loading posts..." />
               ) : (
                 <div>
@@ -67,7 +67,7 @@ export default function Feed() {
                     <DisplayPosts posts={posts} />
                   </InfiniteScroll>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>

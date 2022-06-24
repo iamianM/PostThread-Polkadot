@@ -3,7 +3,10 @@ import React from 'react'
 export default function LogoutButton() {
 
     function logout() {
-        localStorage.setItem("username", "")
+        localStorage.removeItem("username")
+        localStorage.removeItem("msa_id")
+        localStorage.removeItem("profile_pic")
+        window.location.reload()
     }
 
     return (

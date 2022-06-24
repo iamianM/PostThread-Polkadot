@@ -6,26 +6,21 @@ import UserLink from "./UserLink";
 import Search from "./Search";
 import LoginButton from "../Buttons/LoginButton";
 import LogoutButton from "../Buttons/LogoutButton";
-import Link from "next/link";
 
 export default function Header() {
+
   const [username, setUsername] = useState("");
 
   useEffect(() => {
+
     function checkUserData() {
       const item = localStorage.getItem("username");
-      console.log("item" + item);
-      setUsername(item);
-      console.log("changed");
+      if (item) setUsername(item)
+      else setUsername("")
     }
 
     checkUserData();
-    window.addEventListener("storage", () => checkUserData());
-
-    return () => {
-      window.removeEventListener("storage", () => checkUserData());
-    };
-  }, [username]);
+  }, []);
 
   return (
     <nav className="w-full py-6 bg-base-100 w-screen">
@@ -54,9 +49,9 @@ export default function Header() {
               <></>
             )}
             <li className="relative group">
-              <Search />
+              {username !== "" ? <Search /> : <></>}
             </li>
-            <li>{username !== "" ? <LogoutButton /> : <LoginButton />}</li>
+            <li>{username !== "" ? <LogoutButton /> : <></>}</li>
           </ul>
           <button className="flex md:hidden hover:bg-gray-100 p-2 rounded-full transition-all focus:ring focus:ring-purple-500 focus:ring-opacity-25 active:bg-gray-200 outline-none">
             <svg
