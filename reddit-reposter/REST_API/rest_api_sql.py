@@ -8,6 +8,7 @@ from typing import Union
 from flask import jsonify
 from fastapi import FastAPI, Query, Path, HTTPException
 from pydantic import BaseModel, HttpUrl
+import networkx as nx
 
 import math
 import re, praw, json, ipfshttpclient, time, datetime
@@ -16,10 +17,10 @@ import sqlite3
 from substrate_helpers import make_call, addSchema, get_msa_id, \
             get_signature, create_msa_with_delegator, mint_votes, mint_user, get_schemas_from_pattern, \
             get_content_from_schemas, mint_data, follow_user, \
-            post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId
+            post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId, link_schemaId
 from substrateinterface import SubstrateInterface, Keypair
 
-con = sqlite3.connect('../test1.db', check_same_thread=False)
+con = sqlite3.connect('../postthreadV1_write.db', check_same_thread=False)
 cur = con.cursor()
 
 substrate = SubstrateInterface(
@@ -28,6 +29,7 @@ substrate = SubstrateInterface(
     type_registry_preset='kusama'
 )
 bob = Keypair.create_from_uri('//Bob')
+
 
 reddit_creds = json.load(open("../.reddit_creds.json", "r"))
 reddit = praw.Reddit(
@@ -40,7 +42,7 @@ reddit = praw.Reddit(
 
 client = ipfshttpclient.connect()
 
-accounts = {'Alice': 1335, 'Charlie': 1337, 'Dave': 1339, 'Eve': 1341, 'Ferdie': 1343}
+accounts = {'Alice': 693, 'Charlie': 382, 'Dave': 694, 'Eve': 695, 'Ferdie': 696}
 path = "/tmp/"
 
 tags_metadata = [
@@ -159,6 +161,7 @@ def categories_get():
 class SortOptions(str, Enum):
     top = "top"
     new = "new"
+    
 
 @app.get('/posts/{page_number}/{num_posts}', tags=["frontpage"], summary="Get list of posts to display on frontpage",
          description="""
@@ -175,16 +178,29 @@ def posts_get(
             minutes_filter: Union[int, None] = Query(default=None, example=60*24, description='Number of minutes from now to filter by. Post older will be dropped'),
             user_msa_id: Union[int, None] = Query(default=None, example=1, description='Include this to get posts for a specific user'),  
         ):
-    if minutes_filter is None:
-        minutes_filter = 60*24
+    date_where = ""
+    if minutes_filter is not None:
+        date_format = "%Y-%m-%d %H:%M:%S"
+        date_time = datetime.datetime.now() - datetime.timedelta(minutes=minutes_filter)
+        date_str = date_time.strftime(date_format)
+        date_where = f"post.date_minted >= '{date_str}'"
 
     category_where = ""
     if category:
-        category_where = f"AND post.category = '{category}'"
+        category_where = f"post.category = '{category}'"
 
     user_where = ""
     if user_msa_id:
-        user_where = f"AND post.msa_id_from_query = {user_msa_id}"
+        user_where = f"post.msa_id_from_query = {user_msa_id}"
+        
+    where_statement = ""
+    for where in [date_where, category_where, user_where]:
+        if where:
+            if where_statement == "":
+                where_statement += "WHERE "
+            else:
+                where_statement += " AND "
+            where_statement += where
 
     order_by = ""
     if sort_by is None or sort_by == 'top':
@@ -195,18 +211,13 @@ def posts_get(
     lower_bound = (page_number - 1) * num_posts
     upper_bound = page_number * num_posts
 
-    date_format = "%m-%d-%Y %H:%M:%S"
-#     date_format = "%Y-%m-%d %H:%M:%S"
-    date_time = datetime.datetime.now() - datetime.timedelta(minutes=minutes_filter)
-    date_str = date_time.strftime(date_format)
-
     query = f'''
     SELECT * FROM post 
     JOIN (
         SELECT parent_hash, SUM(num_votes) AS total_votes 
         FROM vote GROUP BY parent_hash
     ) votes ON votes.parent_hash = post.ipfs_hash
-    WHERE post.date_minted >= '{date_str}' {category_where} {user_where}
+    {where_statement}
     {order_by}
     LIMIT {lower_bound}, {upper_bound}
     '''
@@ -282,7 +293,6 @@ def user_data_get(
         return HTTPException(status_code=405, detail="Please enter a username or msa_id")
 
     df = get_user(username, user_msa_id)
-
     if df.size == 0:
         return HTTPException(status_code=404, detail="User not found")
     
@@ -301,9 +311,9 @@ def level_to_xp(level):
     return 368599 * 1.101141**(level-61)
 
 class UserLevel(BaseModel):
-    exp: int = 0
+    exp: float = 0
     level: int = 0
-    exp_to_next_level: int = level_to_xp(1)
+    exp_to_next_level: float = level_to_xp(1)
 
 @app.get('/user/level', tags=["userpage"], summary="Get user exp and level from msa_id", response_model=UserLevel)
 def user_level_get(
@@ -335,7 +345,7 @@ def user_level_get(
     ) follows ON user.msa_id_from_query = follows.msa_id_from_query
     WHERE user.msa_id_from_query = {user_msa_id} 
     '''
-    df = pd.read_sql_query(query, con).fillna(0)
+    df = pd.read_sql_query(query, con).fillna(0).iloc[0]
     
     userLevel = UserLevel()
     userLevel.exp = 0
@@ -347,7 +357,7 @@ def user_level_get(
             continue
         userLevel.exp += df[f'{k}_count'] * v
     
-    userLevel.level = xp_to_level(userLevel.exp)
+    userLevel.level = int(xp_to_level(userLevel.exp))
     userLevel.exp_to_next_level = level_to_xp(userLevel.level + 1)
     
     return userLevel
@@ -422,23 +432,105 @@ def user_mint(
     # override password for testing
     password = "password"
     user_wallet = Keypair.create_from_uri('//' + username + password)
-    user_msa_id, _ = mint_user(username, password, profile_pic, user_wallet)
+    user_msa_id = create_msa_with_delegator(bob, user_wallet)
+    mint_user(user_msa_id, username, password, profile_pic, user_wallet)
     return {"user_msa_id": user_msa_id}
 
 @app.post('/user/link', tags=["userpage"], summary="Link an already verified account (email, social, etc)")
 def user_post(
             account_type: str = Query(example='gmail', description='Type of linked account (E.g: facebook, gmail, reddit, etc'),
             account_value: str = Query(example='example@gmail.com', description='Value of linked account (E.g: example@gamil.com, redditorusername, etc'),
+            user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to link account to"),
         ):
+    data = '{' + f'"account_type": {account_type},"account_value": "{account_value}"' + '}'
+    mint_data(data, user_msa_id, link_schemaId)
     return 200
 
-@app.get('/airdrop/check/{username}', tags=["airdroppage"], summary="Check a Reddit user to see how much their airdrop will be as well as get an example post a user can make on Reddit to claim the airdrop.")
-def airdrop_get(page_number: str = Path(description='Username of redditor to check karma of.')):
-    return 200
+@app.get('/airdrop/check/{reddit_username}', tags=["airdroppage"], summary="Check a Reddit user to see how much their airdrop will be as well as get an example post a user can make on Reddit to claim the airdrop.")
+def airdrop_get(
+            reddit_username: str = Path(default="hughjassjess", example="hughjassjess", description='Username of redditor to check karma of.'),
+            postthread_username: str = Query(default="hughjassjess", example="hughjassjess", description='Username they have on PostThread'),
+        ):
+    user = reddit.redditor(reddit_username)
+    try:
+        airdrop_value = user.total_karma
+    except:
+        HTTPException(status_code=406, detail="No Redditor by that username exists")
+        
+    df = get_user(postthread_username, None)
+    if df.size == 0:
+        return HTTPException(status_code=404, detail="User not found")
+        
+    message = f"""I received an airdrop of {airdrop_value} thread tokens just by signing up to www.PostThread.com and making this post.
+    My reward was based on the karma I earned on Reddit. Now I can level up my account and earn more tokens by posting.
+    Come join me on www.PostThread.com/referral/{postthread_username} and claim your airdrop too! Using my referral will also 
+    earn us both 5000 experience! 
+    """
+    return {"message": message, "airdrop_value": airdrop_value}
 
-@app.post('/airdrop/submit', tags=["airdroppage"], summary="Submit URL where Reddit user submitted a post claiming the airdrop. This will verify and transfer tokens.")
-def airdrop(reddit_url_of_post: str):
-    return 200
+@app.post('/airdrop/claim/{reddit_username}', tags=["airdroppage"], summary="Submit URL where Reddit user submitted a post claiming the airdrop. This will verify and transfer tokens.")
+def airdrop_claim(
+            reddit_username: str = Path(default="hughjassjess", example="hughjassjess", description='Username of redditor to check karma of.'),
+            postthread_username: str = Query(default="hughjassjess", example="hughjassjess", description='Username they have on PostThread'), 
+            wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
+        ):
+    user = reddit.redditor(reddit_username)
+    try:
+        airdrop_value = user.total_karma
+    except:
+        HTTPException(status_code=406, detail="No Redditor by that username exists")
+        
+    df = get_user(postthread_username, None)
+    if df.size == 0:
+        return HTTPException(status_code=404, detail="User not found")
+        
+    message = airdrop_get(reddit_username, postthread_username)
+        
+    for i, post in enumerate(user.new()):
+        if i > 10:
+            break
+        if type(post) == praw.models.reddit.submission.Submission:
+            if post.selftext == message["message"]:
+                receipt = make_call("Balances", "transfer", {"dest": df['wallet_ss58_address'], "value": message["airdrop_value"]}, bob, 
+                            wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+                return {"message": "Successfully claimed airdrop. Your reward is being transferred to your account."}
+                
+    details = "We could not match any of your recent posts with the message we provided for you. Please post again and make sure you are using the exact message we provide you."
+    return HTTPException(status_code=407, detail=details)
+
+@app.get('/socialgraph/score/', tags=["socialgraph"], summary="Calculate social graph score of PostThread user.")
+def socialgraph_score(
+            user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get social score of"),
+        ):
+    df = pd.read_sql_query("""SELECT * FROM follow""", con)
+    user_msa_id = int(user_msa_id)
+    if user_msa_id not in df['protagonist_msa_id'] and user_msa_id not in df['antagonist_msa_id']:
+        return HTTPException(status_code=404, detail="User not following or being followed")
+    
+    G = nx.Graph()
+    G.add_edges_from(df[['protagonist_msa_id', 'antagonist_msa_id']].values.tolist())
+    degree_scores = nx.degree_centrality(G)
+    closeness_scores = nx.closeness_centrality(G)
+    betweeness_scores = nx.betweenness_centrality(G)
+    
+    degree_max = max(degree_scores.values())
+    closeness_max = max(closeness_scores.values())
+    betweeness_max = max(betweeness_scores.values())
+    
+    degree_user = 0 if degree_max == 0 else degree_scores[user_msa_id] / degree_max
+    closeness_user = 0 if closeness_max == 0 else closeness_scores[user_msa_id] / closeness_max
+    betweeness_user = 0 if betweeness_max == 0 else betweeness_scores[user_msa_id] / betweeness_max
+    
+    centralities = [degree_user, closeness_user, betweeness_user]
+    centralities.sort(reverse=True)
+    
+    weighted_avg = 0
+    for i, score in enumerate(centralities):
+        weighted_avg += score * i
+        
+    weighted_avg = weighted_avg / 6
+    
+    return {"social_score": weighted_avg}
   
 if __name__ == '__main__':
     uvicorn.run(app, port=5000, host='0.0.0.0', reload=True)

@@ -16,7 +16,7 @@ substrate = SubstrateInterface(
 delegate = Keypair.create_from_uri('//Bob')
 client = ipfshttpclient.connect()
 
-post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId = 7, 8, 3, 4, 5
+post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId, link_schemaId = 7, 8, 3, 4, 5, 10
 
 def make_call(call_module, call_function, call_params, keypair, wait_for_inclusion=True, wait_for_finalization=False):
     call = substrate.compose_call(
@@ -29,7 +29,6 @@ def make_call(call_module, call_function, call_params, keypair, wait_for_inclusi
 
     try:
         receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
-        print("Extrinsic '{}' sent and included in block '{}'".format(receipt.extrinsic_hash, receipt.block_hash))
         return receipt
 
     except SubstrateRequestException as e:
@@ -259,7 +258,6 @@ def mint_data(data, user_msa_id, schemaId, path=None, wait_for_inclusion=True, w
     call_params = {
         "on_behalf_of": user_msa_id,
         "schema_id": schemaId,
-        "message": f"{message}",
         "payload": f"{message}",
     }
     receipt_post = make_call("Messages", "add", call_params, delegate, 

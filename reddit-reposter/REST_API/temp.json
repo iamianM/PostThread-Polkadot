@@ -1,1 +1,1 @@
-{"category": "string", "username": "Charlie", "profile_pic": "string", "title": "string", "body": "string", "url": "http://www.google.com", "is_nsfw": true}
+{"category": "string", "title": "string", "body": "string", "url": "http://www.google.com", "is_nsfw": true}
