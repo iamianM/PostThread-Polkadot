@@ -21,8 +21,9 @@ function MyApp({ Component, pageProps }) {
     } else {
       setIsLoggedIn(false)
     }
-    console.log("Is logged in: " + isLoggedIn)
-  }, [])
+
+    console.log("Is Logged in: " + isLoggedIn)
+  }, [isLoggedIn])
 
   return (
     <QueryClientProvider client={queryClient}>

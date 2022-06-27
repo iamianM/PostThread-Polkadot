@@ -2,15 +2,16 @@ import { CONSTANTS } from '../../../constants/Constants';
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
-        const commentToMint = req.body;
         const query = req.query;
-        const data = await fetch(`${CONSTANTS.server}/submit/comment?` + new URLSearchParams({
-            user_msa_id: `${query.user_msa_id}`,
-            wait_for_inclusion: `${query.wait_for_inclusion}`,
-            wait_for_finalization: `${query.wait_for_finalization}`
+        const username = query.username
+        const password = query.password
+        const profilePic = query.profile_pic
+        const data = await fetch(`${CONSTANTS.server}/user/mint?` + new URLSearchParams({
+            username: username,
+            password: password,
+            profile_pic: profilePic,
         }), {
             method: 'POST',
-            body: JSON.stringify(commentToMint),
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'

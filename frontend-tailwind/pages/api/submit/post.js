@@ -12,8 +12,9 @@ export default async function handler(req, res) {
             wait_for_finalization: `${query.wait_for_finalization}`
         }), {
             method: 'POST',
-            body: JSON.stringify({ postToMint }),
+            body: JSON.stringify(postToMint),
             headers: {
+                'Accept': 'application/json',
                 'Content-Type': 'application/json'
             }
         })

@@ -5,14 +5,18 @@ import { CONSTANTS } from '../../../../constants/Constants';
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
-        const { action } = req.params
         const query = req.query;
-        const data = await fetch(`${CONSTANTS.server}/${action}?` + new URLSearchParams({
-            user_msa_id: `${query.user_msa_id}`,
-            user_msa_id_to_interact_with: `${query.user_msa_id_to_interact_with}`,
+        const method = query.method
+        const id = query.user_msa_id
+        console.log(`${CONSTANTS.server}/interact/${method}`)
+        const idToInteractWith = query.user_msa_id_to_interact_with
+        const data = await fetch(`${CONSTANTS.server}/user/interact/${method}?` + new URLSearchParams({
+            user_msa_id: id,
+            user_msa_id_to_interact_with: idToInteractWith,
         }), {
             method: 'POST',
             headers: {
+                'Accept': 'application/json',
                 'Content-Type': 'application/json'
             }
         })
