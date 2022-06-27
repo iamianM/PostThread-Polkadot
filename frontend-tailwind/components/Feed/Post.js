@@ -4,6 +4,7 @@ import ThumbsDown from '../Buttons/ThumbsDown'
 import ThumbsUp from '../Buttons/ThumbsUp'
 import { isImage } from '../../utils/Utils'
 import { randomIntFromInterval } from '../../utils/Utils'
+import Link from 'next/link'
 
 export default function Post({ post }) {
 
@@ -32,7 +33,7 @@ export default function Post({ post }) {
                     <span className="font-semibold">@{username}</span>
                     <span className="ml-auto text-sm">{post.date_minted}</span>
                 </div>
-                {isImage(image) ? <p className="font-bold">{post.title}</p> : <a href={image} className="font-bold">{post.title}</a>}
+                {isImage(image) ? <p className="font-bold">{post.title}</p> : <Link href={image}><a className="font-bold">{post.title}</a></Link>}
                 <p className="mt-1">{body}</p>
                 <div className="flex items-center justify-center h-64 mt-2 bg-primary-200">
                     {isImage(image) ? (showImage ?

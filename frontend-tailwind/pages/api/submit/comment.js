@@ -4,7 +4,7 @@ import { CONSTANTS } from '../../../constants/Constants';
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
-        const postToMint = req.body;
+        const commentToMint = req.body;
         const query = req.query;
         const data = await fetch(`${CONSTANTS.server}/submit/comment?` + new URLSearchParams({
             user_msa_id: `${query.user_msa_id}`,
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
             wait_for_finalization: `${query.wait_for_finalization}`
         }), {
             method: 'POST',
-            body: JSON.stringify({ postToMint }),
+            body: JSON.stringify({ commentToMint }),
             headers: {
                 'Content-Type': 'application/json'
             }

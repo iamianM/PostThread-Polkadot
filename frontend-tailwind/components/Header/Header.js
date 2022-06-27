@@ -27,12 +27,11 @@ export default function Header() {
         <Link href="/" className="group outline-none rounded-lg">
           <section className="flex items-center text-inherit space-x-2">
             <Image src="/postthreadicon.png" height={40} width={40} />
-            <Link
-              href="/"
+            <a
               className="font-bold text-xl  outline-none rounded-lg"
             >
               PostThread
-            </Link>
+            </a>
           </section>
         </Link>
         <section>

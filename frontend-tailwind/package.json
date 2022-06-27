@@ -17,6 +17,7 @@
     "react-dom": "18.2.0",
     "react-infinite-scroll-component": "^6.1.0",
     "react-query": "^3.39.1",
+    "react-social-login": "^3.4.15",
     "react-toast-notifications": "^2.5.1",
     "theme-change": "^2.0.2",
     "uuid": "^8.3.2"

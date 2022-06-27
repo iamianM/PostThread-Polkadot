@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import React from 'react'
 
 export default function TrendingPost() {
@@ -9,7 +10,7 @@ export default function TrendingPost() {
                     <span className="font-semibold">Username</span>
                     <span className="ml-1">@username</span>
                 </div>
-                <p className="mt-1 text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit, et dolore magna aliqua. <a className="underline" >#hashtag</a></p>
+                <p className="mt-1 text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit, et dolore magna aliqua.</p>
             </div>
         </div>
     )

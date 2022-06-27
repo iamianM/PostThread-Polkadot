@@ -40,7 +40,7 @@ export default function ProfileCard({ id, username, profilePic }) {
                 <ul
                     className="bg-base-300 text-inherit py-2 px-3 mt-3 rounded shadow-sm">
                     <li className="flex items-center py-3">
-                        <button className="w-full bg-primary py-1 px-2 rounded text-inherit text-sm">Follow</button>
+                        <button className="w-full bg-primary py-1 px-2 rounded text-inherit font-semibold text-md">Follow</button>
                     </li>
                     <li>
                         <ProgressBar percentage={percentage} level={level} />
