@@ -4,9 +4,7 @@ import DisplayPosts from "./DisplayPosts";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Loader from "../Loader";
 import TrendingPost from "./TrendingPost";
-import { CONSTANTS } from "../../constants/Constants";
 import Link from "next/link";
-import MockDisplayPosts from "../Mocks/MockDisplayPosts";
 
 export default function Feed() {
   const { error, isError, isLoading } = useQuery("posts", fetchPosts);

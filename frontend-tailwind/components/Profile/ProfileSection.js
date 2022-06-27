@@ -34,11 +34,11 @@ export default function ProfileSection() {
     return (
         <div>
             <div className="container mx-auto my-5 p-5">
-                <div className="md:flex md:-mx-2 ">
+                <main className="flex flex-row h-screen md:flex md:-mx-2 ">
                     <ProfileCard id={id} username={username} profilePic={profilePic} />
                     <ProfileInfo type="Posts" />
                     <ProfileInfo type="Comments" />
-                </div>
+                </main>
             </div>
         </div>
     )

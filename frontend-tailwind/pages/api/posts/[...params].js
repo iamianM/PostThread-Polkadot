@@ -9,9 +9,7 @@ export default async function handler(req, res) {
     if (params.length === 2) {
         const iter = params[0]
         const numberOfMessages = params[1]
-        const data = await fetch(`${CONSTANTS.server}/posts/${iter}/${numberOfMessages}?` + new URLSearchParams({
-            minutes_filter: 10000
-        }), { headers: headers })
+        const data = await fetch(`${CONSTANTS.server}/posts/${iter}/${numberOfMessages}?` + new URLSearchParams({ ...req.query }), { headers: headers })
         const response = await data.json()
         res.status(200).json(response)
         console.log(response)

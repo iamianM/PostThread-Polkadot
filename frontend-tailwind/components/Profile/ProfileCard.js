@@ -25,7 +25,7 @@ export default function ProfileCard({ id, username, profilePic }) {
     }, [id])
 
     return (
-        <div className="w-full md:w-3/12 md:mx-2">
+        <div className="w-1/5 md:w-1/5 md:mx-2">
             <div className="bg-base-200 p-3 border-t-4 border-primary">
                 <div className="image overflow-hidden">
                     <img className="h-auto w-full mx-auto"
