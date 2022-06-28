@@ -7,7 +7,7 @@ export default function LoginForm() {
     const { addToast } = useToasts()
 
     async function fetchUser(username) {
-        const response = await fetch(`api/user/data/${username}`)
+        const response = await fetch('api/user/data?' + new URLSearchParams({ username: username }))
         const data = await response.json()
         return data
     }

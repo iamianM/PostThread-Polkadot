@@ -7,9 +7,7 @@ export default async function handler(req, res) {
     const query = req.query;
     const method = query.follow
     const id = query.user_msa_id
-    const data = await fetch(`${CONSTANTS.server}/user/${method}?` + new URLSearchParams({
-        user_msa_id: `${id}`
-    }))
+    const data = await fetch(`${CONSTANTS.server}/user/${method}?` + new URLSearchParams({ ...req.query }))
     const response = await data.json()
     res.status(200).json(response)
     console.log(response)

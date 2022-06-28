@@ -4,9 +4,7 @@ import DisplayPosts from "./DisplayPosts";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Loader from "../Loader";
 import TrendingPost from "./TrendingPost";
-import { CONSTANTS } from "../../constants/Constants";
 import Link from "next/link";
-import MockDisplayPosts from "../Mocks/MockDisplayPosts";
 
 export default function Feed() {
   const { error, isError, isLoading } = useQuery("posts", fetchPosts);
@@ -15,7 +13,7 @@ export default function Feed() {
   const numMessagesPerScroll = 10;
 
   async function fetchPosts() {
-    const response = await fetch(`api/posts/${iter}/${numMessagesPerScroll}`);
+    const response = await fetch(`api/announcement/posts/${iter}/${numMessagesPerScroll}`);
     const data = await response.json();
     setPosts(posts.concat(data));
     setIter((prevIter) => prevIter + 1);

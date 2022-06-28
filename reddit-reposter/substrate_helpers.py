@@ -16,7 +16,7 @@ substrate = SubstrateInterface(
 delegate = Keypair.create_from_uri('//Bob')
 client = ipfshttpclient.connect()
 
-post_schemaId, comment_schemaId, vote_schemaId, user_schemaId, follow_schemaId, link_schemaId = 7, 8, 3, 4, 5, 10
+schemas = json.load(open("schemas.json"))
 
 def make_call(call_module, call_function, call_params, keypair, wait_for_inclusion=True, wait_for_finalization=False):
     call = substrate.compose_call(
@@ -158,7 +158,7 @@ def create_msa_with_delegator(provider_wallet, delegator_wallet, wait_for_inclus
 
 def mint_votes(user_msa_id, num_votes, parent_hash, post_data_hash, parent_type, wait_for_inclusion=False, wait_for_finalization=False):
     message = '{' + f'"post_hash": "{post_data_hash}", "parent_hash": "{parent_hash}","parent_type": "{parent_type}","num_votes": {num_votes}' + '}'
-    _, receipt = mint_data(message, user_msa_id, vote_schemaId, path=None, 
+    _, receipt = mint_data(message, user_msa_id, schemas['vote'], path=None, 
                            wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
 
     return receipt
@@ -216,7 +216,7 @@ def get_content_from_schemas(schemas, starting_block=None, num_blocks=None):
 
 def mint_user(user_msa_id, username, password, profile_pic, user_wallet, wait_for_inclusion=False, wait_for_finalization=False): 
     user_data = '{' + f'"msa_id": {user_msa_id},"username": "{username}","password": "{password}","profile_pic": "{profile_pic}","wallet_ss58_address": "{user_wallet.ss58_address}"' + '}'
-    user_data_hash, receipt_user = mint_data(user_data, user_msa_id, user_schemaId,
+    user_data_hash, receipt_user = mint_data(user_data, user_msa_id, schemas['user'],
                                              wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return receipt_user
 
@@ -269,5 +269,5 @@ def mint_data(data, user_msa_id, schemaId, path=None, wait_for_inclusion=True, w
 def follow_user(protagonist_msa_id, antagonist_msa_id, is_follow=True, wait_for_inclusion=False, wait_for_finalization=False):
     follow = "follow" if is_follow else "unfollow"
     message = '{' + f'"protagonist_msa_id": {protagonist_msa_id},"antagonist_msa_id": "{antagonist_msa_id}","event": "{follow}"' + '}'
-    _, receipt_follow = mint_data(message, protagonist_msa_id, follow_schemaId, path=None, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    _, receipt_follow = mint_data(message, protagonist_msa_id, schemas['follow'], path=None, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return receipt_follow

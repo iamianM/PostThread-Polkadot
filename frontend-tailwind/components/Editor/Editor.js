@@ -2,9 +2,12 @@ import React from 'react'
 import Image from 'next/image'
 import { useToasts } from "react-toast-notifications";
 
+
 export default function Editor() {
 
     const { addToast } = useToasts()
+    const context = useAppContext();
+    const id = context.id;
 
     const handleSubmit = async (event) => {
         // Stop the form from submitting and refreshing the page.
@@ -23,12 +26,12 @@ export default function Editor() {
 
         try {
             const response = await fetch(`api/submit/post?` + new URLSearchParams({
-                user_msa_id: id,
-                wait_for_inclusion: true,
-                wait_for_finalization: true
+                user_msa_id: parseInt(id),
+                wait_for_inclusion: false,
+                wait_for_finalization: false
             }), {
                 method: 'POST',
-                body: JSON.stringify({ post }),
+                body: JSON.stringify(post),
                 headers: {
                     'Content-Type': 'application/json'
                 }
