@@ -1,42 +1,33 @@
 import React, { useState } from 'react'
-import InfiniteScroll from "react-infinite-scroll-component";
 import { useQuery } from "react-query";
 import DisplayPosts from "../Feed/DisplayPosts";
 import Loader from '../Loader';
 import { useAppContext } from '../../context/AppContext';
-import MockDisplayPosts from '../Mocks/MockDisplayPosts';
+
 export default function ProfileInfo({ type }) {
 
-    const { error, isError, isLoading } = useQuery("posts", fetchUserPosts);
-    const [posts, setPosts] = useState([]);
+    const { error, isError, isLoading } = useQuery("announcements", fetchUserAnnouncements);
+    const [announcements, setAnnouncements] = useState([]);
     const [iter, setIter] = useState(1);
     const numMessagesPerScroll = 10;
+
     const context = useAppContext();
     const id = context.id;
 
-    async function fetchUserPosts() {
-        console.log(id)
-        const response = await fetch(`api/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
-            minutes_filter: 10000,
-            user_msa_id: id
-        }));
-
-        const data = await response.json();
-        setPosts(posts.concat(data));
-        setIter((prevIter) => prevIter + 1);
-    }
-
-    async function fetchUserComments() {
-        const response = await fetch(`api/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
-            sort_by: "new",
-            minutes_filter: 10000,
-            user_msa_id: id
-        }));
-
-
-        const data = await response.json();
-        setPosts(posts.concat(data));
-        setIter((prevIter) => prevIter + 1);
+    async function fetchUserAnnouncements() {
+        let response
+        if (type === "Posts") {
+            response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({ user_msa_id: id }));
+        } else {
+            response = await fetch(`api/announcement/comments/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
+                sort_by: "new",
+                minutes_filter: 10000,
+                user_msa_id: id
+            }));
+        }
+        const data = await response.json()
+        setAnnouncements(announcements.concat(data));
+        setIter(prevIter => prevIter + 1);
     }
 
     return (
@@ -47,7 +38,7 @@ export default function ProfileInfo({ type }) {
                     {isLoading ? (
                         <Loader text="Loading posts..." />
                     ) : (
-                        <DisplayPosts posts={posts} />
+                        (!announcements.length) ? `No ${type} found` : <DisplayPosts posts={announcements} />
                     )}
                 </div>
             </div>

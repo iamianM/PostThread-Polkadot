@@ -13,7 +13,9 @@ export default function Feed() {
   const numMessagesPerScroll = 10;
 
   async function fetchPosts() {
-    const response = await fetch(`api/announcement/posts/${iter}/${numMessagesPerScroll}`);
+    const response = await fetch(`api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
+      sort_by: "new",
+    }));
     const data = await response.json();
     setPosts(posts.concat(data));
     setIter((prevIter) => prevIter + 1);

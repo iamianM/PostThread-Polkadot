@@ -10,6 +10,7 @@ export default async function handler(req, res) {
         const type = params[0]
         const iter = params[1]
         const numberOfMessages = params[2]
+        console.log(new URLSearchParams({ ...req.query }).toString())
         const data = await fetch(`${CONSTANTS.server}/announcement/${type}/${iter}/${numberOfMessages}?` + new URLSearchParams({ ...req.query }), { headers: headers })
         const response = await data.json()
         res.status(200).json(response)
