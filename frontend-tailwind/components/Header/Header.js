@@ -25,7 +25,7 @@ export default function Header() {
     <nav className="w-full py-6 bg-base-100 w-screen">
       <div className="flex items-center justify-between mx-auto xl:max-w-7xl lg:max-w-5xl md:max-w-3xl md:px-2 px-4">
         <Link href="/" className="group outline-none rounded-lg">
-          <section className="flex items-center text-inherit space-x-2">
+          <section className="flex items-center text-inherit space-x-2" style={{ cursor: 'pointer' }}>
             <Image src="/postthreadicon.png" height={40} width={40} />
             <a
               className="font-bold text-xl  outline-none rounded-lg"
