@@ -16,11 +16,13 @@ function MyApp({ Component, pageProps }) {
   const [profilePic, setProfilePic] = useState('')
 
   useEffect(() => {
+
     themeChange(false)
     // 👆 false parameter is required for react project
     const user = localStorage.getItem('username')
     const id = localStorage.getItem('msa_id')
     const profilePic = localStorage.getItem('profile_pic')
+
     if (user) {
       setUsername(user)
       setMsa_id(id)

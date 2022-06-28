@@ -10,16 +10,21 @@ export default function Feed() {
   const { error, isError, isLoading } = useQuery("posts", fetchPosts);
   const [posts, setPosts] = useState([]);
   const [iter, setIter] = useState(1);
+  const [filter, setFilter] = useState("new")
+  const [time, setTime] = useState(1440)
   const numMessagesPerScroll = 10;
 
   async function fetchPosts() {
     const response = await fetch(`api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
-      sort_by: "new",
+      sort_by: filter,
+      minutes_filter: time,
     }));
     const data = await response.json();
     setPosts(posts.concat(data));
     setIter((prevIter) => prevIter + 1);
   }
+
+  useEffect(() => { console.log(filter) }, [filter]);
 
 
   return (
@@ -56,8 +61,28 @@ export default function Feed() {
                 New Post
               </button>
             </Link>
+            <select className="focus:outline-none h-8 rounded-xl px-2 border-sm bg-primary" id="filter"
+              value={filter}
+              onChange={(e) => {
+                setFilter(e.target.value);
+                setPosts([])
+              }}>
+              <option value="top">top</option>
+              <option value="new">new</option>
+            </select>
+            <select className="focus:outline-none h-8 rounded-xl px-2 border-sm bg-primary" id="filter"
+              value={time}
+              onChange={(e) => {
+                setTime(parseInt(e.target.value));
+                setPosts([])
+              }}>
+              <option value="60">hour</option>
+              <option value="1440">day</option>
+              <option value="10080">week</option>
+              <option value="43800">month</option>
+            </select>
           </div>
-          <div className="flex-grow h-0 overflow-auto">
+          <div id="scrollableDiv" className="flex-grow overflow-auto">
             <div className="flex w-full p-8 border-b border-neutral">
               {isLoading ? (
                 <Loader text="Loading posts..." />
@@ -68,6 +93,7 @@ export default function Feed() {
                     next={fetchPosts}
                     hasMore={true}
                     loader={<Loader text="Loading..." />}
+                    scrollableTarget="scrollableDiv"
                   >
                     <DisplayPosts posts={posts} />
                   </InfiniteScroll>

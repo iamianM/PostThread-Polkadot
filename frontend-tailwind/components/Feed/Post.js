@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import CommentsButton from '../Buttons/CommentsButton'
 import ThumbsDown from '../Buttons/ThumbsDown'
 import ThumbsUp from '../Buttons/ThumbsUp'
 import { isImage } from '../../utils/Utils'
@@ -15,7 +14,7 @@ export default function Post({ post }) {
         id: post.msa_id
     }
 
-    const body = post.body
+    const body = post.body.length > 500 ? post.body.substring(0, 500) + '...' : post.body
     const randomImageNumber = randomIntFromInterval(1, 6)
     const imageSrc = `https://www.tailwind-kit.com/images/blog/${randomImageNumber}.jpg`
     const image = post.url ? post.url : imageSrc
@@ -43,7 +42,7 @@ export default function Post({ post }) {
                         }}><span className="font-semibold hover:text-primary-focus" style={{ cursor: 'pointer' }}>@{user.username}</span></Link>
                         <span className="ml-auto text-sm">{post.date_minted}</span>
                     </div>
-                    {isImage(image) ? <p className="font-bold">{post.title}</p> : <Link href={image}><a className="font-bold">{post.title}</a></Link>}
+                    <p className="font-bold">{post.title}</p>
                     <p className="mt-1">{body}</p>
                     <div className="flex items-center justify-center h-64 mt-2 bg-primary-200 ">
                         {isImage(image) ? (showImage ?
@@ -53,8 +52,7 @@ export default function Post({ post }) {
                         }
                     </div>
                     <div className="flex mt-2 items-center justify-between">
-                        <ThumbsUp upvotes={post.upvotes} />
-                        <ThumbsDown downvotes={post.downvotes} />
+                        <ThumbsUp upvotes={post.total_votes} />
                         <p className="font-bold">#{post.category}</p>
                     </div>
                 </div>

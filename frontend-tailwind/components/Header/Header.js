@@ -1,35 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ThemeSelector from "./ThemeSelector";
 import UserLink from "./UserLink";
 import Search from "./Search";
 import LogoutButton from "../Buttons/LogoutButton";
+import { useAppContext } from "../../context/AppContext";
+import LoginButton from "../Buttons/LoginButton";
 
 export default function Header() {
 
-  const [username, setUsername] = useState("");
-
-  useEffect(() => {
-
-    function checkUserData() {
-      const user = localStorage.getItem("username");
-      if (user) setUsername(user)
-      else setUsername("")
-    }
-
-    checkUserData();
-  }, []);
+  const context = useAppContext()
+  const username = context.username
 
   return (
-    <nav className="w-full py-6 bg-base-100 w-screen">
+    <nav className="w-full bg-primary w-screen sticky top-0">
       <div className="flex items-center justify-between mx-auto xl:max-w-7xl lg:max-w-5xl md:max-w-3xl md:px-2 px-4">
         <Link href="/" className="group outline-none rounded-lg">
           <section className="flex items-center text-inherit space-x-2" style={{ cursor: 'pointer' }}>
             <Image src="/postthreadicon.png" height={40} width={40} />
-            <a
-              className="font-bold text-xl  outline-none rounded-lg"
-            >
+            <a className="font-bold text-xl  outline-none rounded-lg">
               PostThread
             </a>
           </section>
@@ -39,7 +29,7 @@ export default function Header() {
             <li className="relative group">
               <ThemeSelector />
             </li>
-            {username !== "" ? (
+            {username ? (
               <li className="relative group">
                 <UserLink username={username} />
               </li>
@@ -47,11 +37,11 @@ export default function Header() {
               <></>
             )}
             <li className="relative group">
-              {username !== "" ? <Search /> : <></>}
+              {username ? <Search /> : <></>}
             </li>
-            <li>{username !== "" ? <LogoutButton /> : <></>}</li>
+            <li>{username ? <LogoutButton /> : <LoginButton />}</li>
           </ul>
-          <button className="flex md:hidden hover:bg-gray-100 p-2 rounded-full transition-all focus:ring focus:ring-purple-500 focus:ring-opacity-25 active:bg-gray-200 outline-none">
+          {/* <button className="flex md:hidden hover:bg-gray-100 p-2 rounded-full transition-all focus:ring focus:ring-purple-500 focus:ring-opacity-25 active:bg-gray-200 outline-none">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -64,7 +54,7 @@ export default function Header() {
                 clipRule="evenodd"
               />
             </svg>
-          </button>
+          </button> */}
         </section>
       </div>
     </nav>

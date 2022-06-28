@@ -1,5 +1,5 @@
 import Feed from '../components/Feed/Feed'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import LoginForm from '../components/LoginForm'
 import { useAppContext } from '../context/AppContext'
 

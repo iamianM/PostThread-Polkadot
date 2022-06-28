@@ -110,8 +110,7 @@ export default function ShowPost({ post }) {
                                     }
                                 </div>
                                 <div className="flex mt-2 items-center justify-between">
-                                    <ThumbsUp upvotes={post.upvotes} />
-                                    <ThumbsDown downvotes={post.downvotes} />
+                                    <ThumbsUp upvotes={post.total_votes} />
                                     <p className="font-bold">#{post.category}</p>
                                 </div>
                             </div>

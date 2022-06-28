@@ -1,10 +1,14 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useToasts } from "react-toast-notifications";
+import { useRouter } from 'next/router'
+
 
 export default function LoginForm() {
 
     const { addToast } = useToasts()
+    const router = useRouter()
+
 
     async function fetchUser(username) {
         const response = await fetch('api/user/data?' + new URLSearchParams({ username: username }))

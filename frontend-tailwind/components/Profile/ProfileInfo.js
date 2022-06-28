@@ -17,7 +17,11 @@ export default function ProfileInfo({ type }) {
     async function fetchUserAnnouncements() {
         let response
         if (type === "Posts") {
-            response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({ user_msa_id: id }));
+            response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
+                sort_by: "new",
+                minutes_filter: 10000,
+                user_msa_id: id
+            }));
         } else {
             response = await fetch(`/api/announcement/comments/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
                 sort_by: "new",
