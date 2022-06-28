@@ -9,7 +9,12 @@ import Link from 'next/link'
 export default function Post({ post }) {
 
     const [showImage, setShowImage] = useState(true)
-    const username = post.username
+    const user = {
+        username: post.username,
+        profilePic: post.profile_pic,
+        id: post.msa_id
+    }
+
     const body = post.body
     const randomImageNumber = randomIntFromInterval(1, 6)
     const imageSrc = `https://www.tailwind-kit.com/images/blog/${randomImageNumber}.jpg`
@@ -26,13 +31,16 @@ export default function Post({ post }) {
                     className="mx-auto object-cover rounded-full" />
             </span>
             <Link href={{
-                pathname: `/${encodeURIComponent(post.ipfs_hash)}`,
+                pathname: `/post/${encodeURIComponent(post.ipfs_hash)}`,
                 query: post
             }}>
                 <div className="flex flex-col flex-grow ml-4">
                     <div className="flex">
                         {/* <span className="font-semibold">@{username}</span> */}
-                        <span className="font-semibold">@{username}</span>
+                        <Link href={{
+                            pathname: `/profile/${encodeURIComponent(user.id)}`,
+                            query: user
+                        }}><span className="font-semibold">@{user.username}</span></Link>
                         <span className="ml-auto text-sm">{post.date_minted}</span>
                     </div>
                     {isImage(image) ? <p className="font-bold">{post.title}</p> : <Link href={image}><a className="font-bold">{post.title}</a></Link>}
@@ -47,7 +55,6 @@ export default function Post({ post }) {
                     <div className="flex mt-2 items-center justify-between">
                         <ThumbsUp upvotes={post.upvotes} />
                         <ThumbsDown downvotes={post.downvotes} />
-                        <CommentsButton numberOfComments={post.num_comments} />
                         <p className="font-bold">#{post.category}</p>
                     </div>
                 </div>

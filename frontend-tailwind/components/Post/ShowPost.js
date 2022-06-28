@@ -2,17 +2,23 @@ import React, { useState } from 'react'
 import { isImage } from '../../utils/Utils'
 import ThumbsDown from '../Buttons/ThumbsDown'
 import ThumbsUp from '../Buttons/ThumbsUp'
-import CommentsButton from '../Buttons/CommentsButton'
 import { randomIntFromInterval } from '../../utils/Utils'
 import DisplayComments from './DisplayComments'
 import Loader from '../Loader'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { useQuery } from 'react-query'
+import { useToasts } from "react-toast-notifications";
+import Link from 'next/link'
 
 export default function ShowPost({ post }) {
 
+    const { addToast } = useToasts()
     const [showImage, setShowImage] = useState(true)
-    const username = post.username
+    const user = {
+        username: post.username,
+        profilePic: post.profile_pic,
+        id: post.msa_id
+    }
     const body = post.body
     const randomImageNumber = randomIntFromInterval(1, 6)
     const imageSrc = `https://www.tailwind-kit.com/images/blog/${randomImageNumber}.jpg`
@@ -29,12 +35,48 @@ export default function ShowPost({ post }) {
     const numMessagesPerScroll = 10;
 
     async function fetchComments() {
-        const response = await fetch(`api/announcement/comments/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({ post_hash: post.ipfs_hash }));
+        const response = await fetch(`/api/announcement/comments/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({ post_hash: post.ipfs_hash }));
         const data = await response.json();
         console.log(data)
         if (!data.length) setHasMore(false);
         setComments(comments.concat(data));
         setIter((prevIter) => prevIter + 1);
+    }
+
+    const handleSubmit = async (event) => {
+
+        event.preventDefault()
+
+        const body = {
+            post_hash: post.ipfs_hash,
+            parent_comment_hash: post.ipfs_hash,
+            depth: 0,
+            body: event.target.comment.value,
+            is_nsfw: false
+        }
+
+        const response = await fetch('/api/submit/comment?' + new URLSearchParams({
+            user_msa_id: post.msa_id,
+            wait_for_finalization: false,
+            wait_for_inclusion: false
+        }), {
+            method: 'POST',
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+
+        const data = await response.json();
+
+        addToast("Comment was created and will finalize on the blockchain soon.", {
+            appearance: 'success',
+            autoDismiss: true,
+        })
+
+        console.log(data)
+
     }
 
 
@@ -46,13 +88,16 @@ export default function ShowPost({ post }) {
                     <div className="p-3 border-t-4 border-primary">
                         <div className="flex  w-auto p-8 border-b border-gray-300">
                             <span className="flex-shrink-0 w-12 h-12 bg-primary-400 rounded-full">
-                                <img alt="profil" src={post.profile_pic}
+                                <img alt="profil" src={user.profilePic}
                                     className="mx-auto object-cover rounded-full" />
                             </span>
                             <div className="flex flex-col flex-grow ml-4">
                                 <div className="flex">
-                                    {/* <span className="font-semibold">@{username}</span> */}
-                                    <span className="font-semibold">@{username}</span>
+                                    <Link href={{
+                                        pathname: `/profile/${encodeURIComponent(user.id)}`,
+                                        query: user
+                                    }}>
+                                        <span className="font-semibold">@{user.username}</span></Link>
                                     <span className="ml-auto text-sm">{post.date_minted}</span>
                                 </div>
                                 <p className="font-bold">{post.title}</p>
@@ -67,11 +112,21 @@ export default function ShowPost({ post }) {
                                 <div className="flex mt-2 items-center justify-between">
                                     <ThumbsUp upvotes={post.upvotes} />
                                     <ThumbsDown downvotes={post.downvotes} />
-                                    <CommentsButton numberOfComments={post.num_comments} />
                                     <p className="font-bold">#{post.category}</p>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div className="py-2 px-4 bg-base-200 rounded-b-xl">
+                        <form onSubmit={handleSubmit}>
+                            <label htmlFor="editor" className="sr-only">Insert a comment </label>
+                            <textarea id="comment" rows="8" className="block px-0 w-full text-sm text-inherit bg-base-200 border-2 border-primary rounded-xl focus:ring-0 " placeholder="Write a comment..." required></textarea>
+                            <div className="flex justify-end mt-2">
+                                <button className="flex items-center h-8 px-2 text-md bg-primary rounded-xl hover:bg-primary-focus">
+                                    Publish
+                                </button>
+                            </div>
+                        </form>
                     </div>
                     <div className='flex flex-col flex-grow mt-4 mb-4 max-h-screen overflow-y-auto bg-base-200 overflow-x-hidden'>
                         {isLoading ? (
@@ -90,7 +145,7 @@ export default function ShowPost({ post }) {
                         )}
                     </div>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     )
 }

@@ -6,8 +6,6 @@ export default function ProfileCard({ id, username, profilePic }) {
 
     const [percentage, setPercentage] = useState(0)
     const [level, setLevel] = useState(0)
-    const imageSrc = "/postthreadicon.png";
-    const image = isImage(profilePic) ? profilePic : imageSrc
 
     useEffect(() => {
 
@@ -29,7 +27,7 @@ export default function ProfileCard({ id, username, profilePic }) {
             <div className="bg-base-200 p-3 border-t-4 border-primary">
                 <div className="image overflow-hidden">
                     <img className="h-auto w-full mx-auto"
-                        src={image}
+                        src={profilePic}
                         alt="" />
                 </div>
                 <h1 className="text-inherit font-bold text-xl leading-8 my-1">{username}</h1>

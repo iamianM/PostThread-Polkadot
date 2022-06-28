@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'next/router'
-import ShowPost from '../components/Post/ShowPost'
+import ShowPost from '../../components/Post/ShowPost'
 
 export default function PostPage() {
 

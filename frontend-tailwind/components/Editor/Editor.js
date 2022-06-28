@@ -1,7 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { useToasts } from "react-toast-notifications";
-
+import { useAppContext } from '../../context/AppContext';
 
 export default function Editor() {
 
