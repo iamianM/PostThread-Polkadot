@@ -10,8 +10,8 @@ export default function ProfileSection({ user }) {
             <div className="container mx-auto my-5 p-5">
                 <main className="flex flex-row h-screen md:flex md:-mx-2 ">
                     <ProfileCard id={user.id} username={user.username} profilePic={user.profilePic} />
-                    <ProfileInfo type="Posts" />
-                    <ProfileInfo type="Comments" />
+                    <ProfileInfo type="Posts" user={user} />
+                    <ProfileInfo type="Comments" user={user} />
                 </main>
             </div>
         </div>

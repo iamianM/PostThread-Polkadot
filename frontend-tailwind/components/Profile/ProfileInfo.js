@@ -2,17 +2,13 @@ import React, { useState } from 'react'
 import { useQuery } from "react-query";
 import DisplayPosts from "../Feed/DisplayPosts";
 import Loader from '../Loader';
-import { useAppContext } from '../../context/AppContext';
 
-export default function ProfileInfo({ type }) {
+export default function ProfileInfo({ type, user }) {
 
     const { error, isError, isLoading } = useQuery("announcements", fetchUserAnnouncements);
     const [announcements, setAnnouncements] = useState([]);
     const [iter, setIter] = useState(1);
     const numMessagesPerScroll = 10;
-
-    const context = useAppContext();
-    const id = context.id;
 
     async function fetchUserAnnouncements() {
         let response
@@ -20,13 +16,13 @@ export default function ProfileInfo({ type }) {
             response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
                 sort_by: "new",
                 minutes_filter: 10000,
-                user_msa_id: id
+                user_msa_id: user.id
             }));
         } else {
             response = await fetch(`/api/announcement/comments/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
                 sort_by: "new",
                 minutes_filter: 10000,
-                user_msa_id: id
+                user_msa_id: user.id
             }));
         }
         const data = await response.json()
