@@ -3,8 +3,8 @@ import { useQuery } from "react-query";
 import DisplayPosts from "./DisplayPosts";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Loader from "../Loader";
-import TrendingPost from "./TrendingPost";
 import Link from "next/link";
+import DisplayTrendingProfiles from "../Trending/DisplayTrendingProfiles";
 
 export default function Feed() {
   const { error, isError, isLoading } = useQuery("posts", fetchPosts);
@@ -12,6 +12,7 @@ export default function Feed() {
   const [iter, setIter] = useState(1);
   const [filter, setFilter] = useState("new")
   const [time, setTime] = useState(1440)
+  const [profiles, setProfiles] = useState([])
   const numMessagesPerScroll = 10;
 
   async function fetchPosts() {
@@ -24,8 +25,19 @@ export default function Feed() {
     setIter((prevIter) => prevIter + 1);
   }
 
-  useEffect(() => { console.log(filter) }, [filter]);
+  useEffect(() => {
 
+    async function fetchTrendingProfiles() {
+      const response = await fetch(`api/announcement/posts/1/20?` + new URLSearchParams({
+        sort_by: "top",
+        minutes_filter: 1440,
+      }));
+      const data = await response.json();
+      setProfiles(data);
+    }
+
+    fetchTrendingProfiles()
+  }, [profiles])
 
   return (
     <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
@@ -102,12 +114,10 @@ export default function Feed() {
             </div>
           </div>
         </div>
-        <div className="flex flex-col flex-shrink-0 w-1/4 pl-4">
+        <div className="flex flex-col flex-shrink-0 w-1/4 pl-4 overflow-y-auto">
           <div>
-            <h3 className="mt-6 font-semibold">Trending</h3>
-            <TrendingPost />
-            <TrendingPost />
-            <TrendingPost />
+            <h3 className="mt-6 font-semibold">Today&apos;s trending profiles</h3>
+            <DisplayTrendingProfiles profiles={profiles} />
           </div>
         </div>
       </div>

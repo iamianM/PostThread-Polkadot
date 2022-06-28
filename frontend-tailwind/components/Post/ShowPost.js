@@ -92,12 +92,12 @@ export default function ShowPost({ post }) {
                                     className="mx-auto object-cover rounded-full" />
                             </span>
                             <div className="flex flex-col flex-grow ml-4">
-                                <div className="flex">
+                                <div className="flex" style={{ cursor: 'pointer' }}>
                                     <Link href={{
                                         pathname: `/profile/${encodeURIComponent(user.id)}`,
                                         query: user
                                     }}>
-                                        <span className="font-semibold">@{user.username}</span></Link>
+                                        <span className="font-semibold hover:text-primary-focus" style={{ cursor: 'pointer' }} >@{user.username}</span></Link>
                                     <span className="ml-auto text-sm">{post.date_minted}</span>
                                 </div>
                                 <p className="font-bold">{post.title}</p>
