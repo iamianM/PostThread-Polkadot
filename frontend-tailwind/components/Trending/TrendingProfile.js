@@ -10,7 +10,7 @@ export default function TrendingProfile({ profile }) {
     }
 
     return (
-        <div className="flex w-full py-4 border-b border-gray-300">
+        <div className="flex w-full py-4 border-b border-primary">
             <span className="flex-shrink-0 w-10 h-10 bg-base-300 rounded-full">
                 <img alt="profil" src={user.profilePic}
                     className="mx-auto object-cover rounded-full" />

@@ -31,8 +31,8 @@ export default function Post({ post, fullImage }) {
     }
 
     return (
-        <div className="flex w-auto p-8 border-b border-gray-300">
-            <div className="flex flex-col w-24 h-24 justify-center ">
+        <div className="flex w-auto p-8 border-b border-primary ">
+            <div className="flex flex-col w-12 h-12 justify-center ">
                 <Vote type="up" post={post} />
                 {post.total_votes}
                 <Vote type="down" post={post} />

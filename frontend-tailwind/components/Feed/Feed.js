@@ -69,7 +69,7 @@ export default function Feed() {
                         </div>
                     </a> */}
         </div>
-        <div className="flex flex-col flex-grow border-l border-r border-neutral">
+        <div className="flex flex-col flex-grow border-l border-r border-neutral overflow-auto">
           <div className="flex justify-between flex-shrink-0 px-8 py-4 border-b border-neutral">
             <Link href="/create-post">
               <button className="flex items-center h-8 px-2 text-md bg-primary rounded-xl hover:bg-primary-focus">
@@ -97,20 +97,18 @@ export default function Feed() {
               <option value="43800">month</option>
             </select>
           </div>
-          <div className="overflow-auto">
-            {isLoading ? (
-              <Loader text="Loading posts..." />
-            ) : (
-              <InfiniteScroll
-                dataLength={posts.length}
-                next={fetchPosts}
-                hasMore={hasMore}
-                loader={<Loader text="Loading..." />}
-              >
-                <DisplayPosts posts={posts} />
-              </InfiniteScroll>
-            )}
-          </div>
+          {isLoading ? (
+            <Loader text="Loading posts..." />
+          ) : (
+            <InfiniteScroll
+              dataLength={posts.length}
+              next={fetchPosts}
+              hasMore={hasMore}
+              loader={<Loader text="Loading..." />}
+            >
+              <DisplayPosts posts={posts} />
+            </InfiniteScroll>
+          )}
         </div>
         <div className="flex flex-col flex-shrink-0 w-1/4 pl-4 overflow-y-auto">
           <div>
@@ -119,6 +117,6 @@ export default function Feed() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
