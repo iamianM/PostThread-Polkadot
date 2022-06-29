@@ -1,13 +1,9 @@
 import React, { useState } from 'react'
-import { isImage } from '../../utils/Utils'
-import { randomIntFromInterval } from '../../utils/Utils'
 import DisplayComments from './DisplayComments'
 import Loader from '../Loader'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { useQuery } from 'react-query'
 import { useToasts } from "react-toast-notifications";
-import Link from 'next/link'
-import Vote from '../Buttons/Vote'
 import Post from '../Feed/Post'
 
 export default function ShowPost({ post }) {
@@ -43,7 +39,7 @@ export default function ShowPost({ post }) {
         const response = await fetch('/api/submit/comment?' + new URLSearchParams({
             user_msa_id: post.msa_id,
             wait_for_finalization: false,
-            wait_for_inclusion: false
+            wait_for_inclusion: true
         }), {
             method: 'POST',
             body: JSON.stringify(body),

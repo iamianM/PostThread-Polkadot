@@ -17,7 +17,7 @@ export default function Post({ post, fullImage }) {
     const fullImageClass = fullImage ? "flex items-center justify-center h-auto" : "flex items-center justify-center h-64"
     const fullImageClassDiv = fullImage ? "flex items-center justify-center h-auto mt-2 bg-primary-200" : "flex items-center justify-center h-64 mt-2 bg-primary-200"
 
-    const body = post.body.length > 500 ? post.body.substring(0, 500) + '...' : post.body
+    const body = post.body ? post.body.length > 500 ? post.body.substring(0, 500) + '...' : post.body : ""
     const randomImageNumber = randomIntFromInterval(1, 6)
     const imageSrc = `https://www.tailwind-kit.com/images/blog/${randomImageNumber}.jpg`
     const image = post.url ? post.url : imageSrc
