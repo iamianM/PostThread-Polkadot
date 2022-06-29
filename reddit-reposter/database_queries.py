@@ -31,7 +31,6 @@ def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=Fal
     date_format = "%Y-%m-%d %H:%M:%S"
 
     for schemaName, schemaId in schemas.items():
-        print(schemaName)
         if query_start:
             query = f"""SELECT block_number FROM {schemaName} ORDER BY date_minted DESC LIMIT 1"""
             start_block = int(pd.read_sql_query(query, con)['block_number'].iloc[0]) + 1
@@ -47,7 +46,7 @@ def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=Fal
         ).value
 
         extraValues = "block_number INTEGER,msa_id_from_query INTEGER,provider_key STRING,date_minted DATE"
-        is_ipfs_hash = schemaName not in ['vote', 'user', "follow"]
+        is_ipfs_hash = schemaName in ["post", "comment"]
         if is_ipfs_hash:
             extraValues += ",ipfs_hash STRING"
 
@@ -73,13 +72,30 @@ def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=Fal
             method='messages_getBySchema',
             params=params,
         )
+        contents = request['result']['content']
+        while len(request['result']['content']) == 10000:
+            params = [
+                schemaId,
+                {
+                    "page_size": 10000,
+                    "from_block": contents[-1]['block_number'],
+                    "to_block": current_block,
+                    "from_index": 0,
+                }
+            ]
+            request = substrate.rpc_request(
+                method='messages_getBySchema',
+                params=params,
+            )
+            contents += request['result']['content']
         
-        if len(request['result']['content']) > 0:
-            print(schemaName, len(request['result']['content']))
+        if len(contents) > 0:
+            print(schemaName, len(contents))
+            
 
         table_values = []
         total_time = 0
-        for content in request['result']['content']:
+        for content in contents:
             date_str = "null"
             if content['block_number'] not in extrinsics:
                 extrinsics[content['block_number']] = substrate.get_block(substrate.get_block_hash(content['block_number']))['extrinsics']

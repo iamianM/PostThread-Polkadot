@@ -41,6 +41,7 @@ reddit = praw.Reddit(
 
 client = ipfshttpclient.connect()
 
+user_starting_level = 10
 daily_token_rewards = 100000
 accounts = json.load(open("accounts.json", "r"))
 schemas = json.load(open("schemas.json", "r"))
@@ -83,11 +84,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-print(type(example_post), example_post)
+
 @app.get('/post/{post_hash}', tags=["postpage"], summary="Get post data from IPFS hash")
 def post_get(
             post_hash: str = Path(default=example_post, example=example_post, description='IPFS hash of post to get data for'),  
-    ):
+        ):
     query = f'''
     SELECT * FROM post 
     LEFT JOIN (
@@ -112,8 +113,11 @@ class PostInput(BaseModel):
     is_nsfw: bool 
     
 @app.post('/submit/post', tags=["submitpage"], summary="Submit data to mint a post.")
-def submit_post(postInput: PostInput, user_msa_id: int=accounts['Charlie'], 
-            wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None):
+def submit_post(
+            postInput: PostInput, 
+            user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
+            wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
+        ):
     if wait_for_inclusion is None:
         wait_for_inclusion = False
     if wait_for_finalization is None:
@@ -127,9 +131,41 @@ def submit_post(postInput: PostInput, user_msa_id: int=accounts['Charlie'],
 
     receipt = mint_data(postInput.__dict__, user_msa_id, schemas['post'], path+'posts/', wait_for_inclusion, wait_for_finalization)
     if wait_for_inclusion and not receipt.error_message:
-        return {"Error": receipt.error_message}, 402
+        return HTTPException(status_code=402, Error=receipt.error_message)
 
     return {"Success": "Post was created and will finalize on the blockchain soon."}
+    
+@app.post('/submit/vote', tags=["postpage"], summary="Submit an upvote or downvote")
+def submit_vote(
+            post_hash: str = Query(default=example_post, example=example_post, description='Post we interacting with'), 
+            parent_hash: str = Query(default=example_post, example=example_post, 
+                                    description='Parent to vote on. same as post_hash if voting on a post'), 
+            parent_type: str = Query(default="post", example="post", description='Whether parent is a post or comment'), 
+            num_votes: int = Query(default=1, example=1, description='1 for upvote, -1 for downvote'), 
+            user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
+            wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
+        ):
+    if wait_for_inclusion is None:
+        wait_for_inclusion = False
+    if wait_for_finalization is None:
+        wait_for_finalization = False
+
+    if user_msa_id is None:
+        df = get_user(user_msa_id=user_msa_id)
+        if df.size == 0:
+            return HTTPException(status_code=404, detail="User not found")
+        user_msa_id = df['msa_id'].iloc[0]
+
+    data = '{' + f'"post_hash": {post_hash},"parent_hash": {parent_hash},"parent_type": {parent_type},"num_votes": {num_votes}' + '}'
+    _, receipt = mint_data(data, user_msa_id, schemas['vote'], 
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    
+    if wait_for_inclusion:
+        if receipt.error_message:
+            return HTTPException(status_code=402, Error=receipt.error_message)
+        return {"Success": "Vote was created and posted to the blockchain."} 
+
+    return {"Success": "Vote was created and will finalize on the blockchain soon."}
     
 class CommentInput(BaseModel):
     post_hash: str = Query(default=example_post, example=example_post, description='Hash of the post to comment on.')
@@ -155,20 +191,75 @@ def submit_comment(
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
-    receipt = mint_data(commentInput.__dict__, user_msa_id, schemas['post'], path+'comments/', wait_for_inclusion, wait_for_finalization)
+    receipt = mint_data(commentInput.__dict__, user_msa_id, schemas['post'], path+'comments/', 
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and not receipt.error_message:
         return {"Error": receipt.error_message}, 402
 
     return {"Success": "Comment was created and will finalize on the blockchain soon."}
 
-@app.get('/categories', tags=["frontpage"], summary="Get all categories")
-def categories_get():
-    df = pd.read_sql_query("SELECT DISTINCT(category) FROM post", con)
-    return df['category'].tolist()
-
 class SortOptions(str, Enum):
     top = "top"
     new = "new"
+
+@app.get('/categories', tags=["frontpage"], summary="Get all categories")
+def categories_get(
+            category_name: Union[str, None] = Query(default=None, example="dogeco", 
+                            description='If searching for a category, specify the name. Leave empty to get all categories'), 
+            sort_by: Union[SortOptions, None] = Query(default=None, example="top", description='Sort by (top or new)'),
+            minutes_filter: Union[int, None] = Query(default=None, example=60*24, description='Number of minutes from now to filter by. Post older will be dropped'),
+            multiple: Union[bool, None] = Query(default=None, example=False, description="whether to return multiple categories"),
+        ): 
+    date_where = ""
+    if minutes_filter is not None:
+        date_time = datetime.datetime.now() - datetime.timedelta(minutes=minutes_filter)
+        date_str = date_time.strftime(date_format)
+        date_where = f"post.date_minted >= '{date_str}'"
+        
+    category_where = ""
+    if category_name:
+        category_where = f"post.category LIKE '%{category_name}%'"
+        
+    where_statement = ""
+    for where in [date_where, category_where]:
+        if where:
+            if where_statement == "":
+                where_statement += "WHERE "
+            else:
+                where_statement += " AND "
+            where_statement += where
+
+    order_by = ""
+    if sort_by is None or sort_by == 'top':
+        order_by = "ORDER BY total_votes DESC"
+    if sort_by == 'new':
+        order_by = "ORDER BY date_minted DESC"
+
+    query = f'''
+    SELECT * FROM post
+    LEFT JOIN (
+        SELECT parent_hash, SUM(num_votes) AS total_votes 
+        FROM vote GROUP BY parent_hash
+    ) votes ON votes.parent_hash = post.ipfs_hash
+    LEFT JOIN (
+        SELECT msa_id, username, password, profile_pic, wallet_ss58_address, block_number AS user_block_number, provider_key AS user_provider_key, date_minted AS user_date_minted
+        FROM user u1
+        WHERE date_minted = (SELECT max(date_minted) 
+            FROM user u2
+             WHERE u1.msa_id = u2.msa_id)
+    ) users ON users.msa_id = post.msa_id_from_query
+    {where_statement}
+    {order_by}
+    '''
+    df = pd.read_sql_query(query, con).drop_duplicates()
+    
+    if df.size > 1:
+        df_user = df[df['category'] == category_name]
+        if df_user.size > 0:
+            idxs = df_user.index
+            df = pd.concat([df.iloc[idxs,:], df.drop(idxs, axis=0)], axis=0)
+    
+    return list(df.groupby('category')['total_votes'].count().sort_values(ascending=False).index)
 
 class AnnouncementTypeOptions(str, Enum):
     posts = "posts"
@@ -193,8 +284,8 @@ def announcements_get(
             user_msa_id: Union[int, None] = Query(default=None, example=accounts['Charlie'], description='Include this to get posts for a specific user'),
             post_hash: str = Query(default=None, example=example_post, description='IPFS hash of post to get comments for'),  
         ):
-    if announcement_type == 'comments' and post_hash is None:
-        return HTTPException(status_code=409, detail="You need to provide a post_hash when asking for comments")
+    # if announcement_type == 'comments' and post_hash is None:
+    #     return HTTPException(status_code=409, detail="You need to provide a post_hash when asking for comments")
     
     announcement_type_singular = announcement_type[:-1]
     
@@ -210,7 +301,7 @@ def announcements_get(
 
     user_where = ""
     if user_msa_id:
-        user_where = f"{announcement_type_singular}.msa_id_from_query"
+        user_where = f"{announcement_type_singular}.msa_id_from_query = {user_msa_id}"
 
     post_hash_where = ""
     if post_hash:
@@ -259,15 +350,15 @@ def announcements_get(
     return response
 
 def get_user(username=None, user_msa_id=None):
-    where = None
+    where = ""
     if username is not None:
-        where = f"WHERE u1.username = '{username}'"
+        where = f"u1.username LIKE '%{username}%' AND"
     if user_msa_id is not None:
-        where = f"WHERE u1.msa_id = '{user_msa_id}'"
+        where = f"u1.msa_id = '{user_msa_id}' AND"
 
     query = f'''
     SELECT * FROM user u1
-    {where} AND date_minted = (
+    WHERE {where} date_minted = (
         SELECT max(date_minted) 
         FROM user u2
         WHERE u1.msa_id = u2.msa_id
@@ -285,8 +376,9 @@ class User(BaseModel):
 
 @app.get('/user/data', tags=["userpage"], summary="Get user data from msa_id or username")
 def user_data_get(
-        username: Union[str, None] = Query(default=None, example="Charlie", description='username to get data for'), 
-        user_msa_id: Union[str, None] = Query(default=None, description="user's msa_id to get data for"),
+        username: Union[str, None] = Query(default=None, example="Charl", description='username to get data for'), 
+        user_msa_id: Union[int, None] = Query(default=None, description="user's msa_id to get data for"), 
+        multiple: Union[bool, None] = Query(default=None, example=False, description="whether to return multiple users"),
     ):
     if username is None and user_msa_id is None:
         return HTTPException(status_code=405, detail="Please enter a username or msa_id")
@@ -295,21 +387,29 @@ def user_data_get(
     if df.size == 0:
         return HTTPException(status_code=404, detail="User not found")
     
-    response = df.to_dict(orient='records')[0]
+    if df.size > 1:
+        df_user = df[df['username'] == username]
+        if df_user.size > 0:
+            idxs = df_user.index
+            df = pd.concat([df.iloc[idxs,:], df.drop(idxs, axis=0)], axis=0)
+    
+    response = df.to_dict(orient='records')
     if username is not None and user_msa_id is not None:
         if response['username'] != response['msa_id']:
             return HTTPException(status_code=406, detail="Given username and msa_id do not match")
         
+    if not multiple:
+        response = response[0]
     return response
 
 rewards = {"post": 100, "comment": 10, "vote": 1, "user": 1000, "follow": 5, "link": 400}
 def xp_to_level(xp):
     if xp == 0:
-        return 0
+        return 0 
     result = math.ceil(math.log(xp/368599, 1.101141)) + 61
     if result > 0:
-        return result
-    return 0
+        return result 
+    return 0 
 
 def level_to_xp(level): 
     return 368599 * 1.101141**(level-61)
@@ -367,13 +467,13 @@ def get_user_exp(count_dict, user_msa_id):
     return exp
 
 class UserLevel(BaseModel):
-    exp: float = 0
-    level: int = 0
-    exp_to_next_level: float = level_to_xp(1)
+    exp: float = level_to_xp(user_starting_level)
+    level: int = user_starting_level
+    exp_to_next_level: float = level_to_xp(user_starting_level + 1)
 
 @app.get('/user/level', tags=["userpage"], summary="Get user exp and level from msa_id", response_model=UserLevel)
 def user_level_get(
-        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
+        user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
     ):        
     count_dict = get_user_level_df(user_msa_id)
     if count_dict.size == 0:
@@ -390,7 +490,7 @@ def user_level_get(
 
 @app.get('/user/dailypayout', tags=["userpage"], summary="Calculates user's daily rewards")
 def user_dailypayout_get(
-        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
+        user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
     ):     
     user_msa_id = int(user_msa_id)
     now = datetime.datetime.now()
@@ -404,7 +504,7 @@ def user_dailypayout_get(
         ORDER BY date_minted DESC LIMIT 1
     """, con)['date_minted']
     
-    if last_payout_date.shape[0] > 0 and last_payout_date[0] < datetime.now().strftime('%Y-%m-%d'):
+    if last_payout_date.shape[0] > 0 and last_payout_date[0] < datetime.datetime.now().strftime('%Y-%m-%d'):
         return {
             "details": "Users already claimed their payout today",
             "payout_amount_left_to_claim": 0, "seconds_till_next_payout": seconds_till_next_payout
@@ -425,9 +525,7 @@ def user_dailypayout_get(
     for index, row in df.iterrows():
         count_dict = row.to_dict()
         msa_id = row['msa_id_from_query']
-        if msa_id == 1200:
-            print(msa_id)
-        users_level[msa_id] = xp_to_level(get_user_exp(count_dict, msa_id))
+        users_level[msa_id] = xp_to_level(get_user_exp(count_dict, msa_id)) + user_starting_level
         weighted_avgs[msa_id] = get_user_weighted_social_score(centralities, msa_id)
         users_score[msa_id] = users_level[msa_id] * weighted_avgs[msa_id]
         
@@ -442,7 +540,7 @@ def user_dailypayout_get(
 
 @app.post('/user/dailypayout', tags=["userpage"], summary="Pays a user their daily rewards")
 def user_dailypayout_post(
-        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
+        user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
         wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
     ):        
     response = user_dailypayout_get(user_msa_id)
@@ -453,19 +551,10 @@ def user_dailypayout_post(
     receipt = make_call("Balances", "transfer", {"dest": response['wallet_ss58_address'], "value": payout_amount}, bob, 
                         wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     data = '{' + f'"payout_amount": {payout_amount}' + '}'
-    mint_data(data, user_msa_id, schemas['payout'])
+    mint_data(data, user_msa_id, schemas['payout'], wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return response
     
-    
-class FollowersOptions(str, Enum):
-    followers = "followers"
-    followering = "following"
-    
-@app.get('/user/{followers}', tags=["userpage"], summary="Get a users followers or following")
-def user_followers_get(
-        followers: FollowersOptions = Path(default="followers", example="followers", description='Whether to get followers or following'),
-        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get followers or following of"),
-    ):
+def get_follow_df(followers, user_msa_id):
     if followers == "followers":
         where_var = "protagonist_msa_id"
         select_var = "antagonist_msa_id"
@@ -474,7 +563,7 @@ def user_followers_get(
         select_var = "protagonist_msa_id"
         
     query = f'''
-    SELECT followers.{followers}_msa_id, date_followed, username, password, profile_pic, wallet_ss58_address, date_minted
+    SELECT followers.{followers}_msa_id, date_followed, user.*
     FROM user
     INNER JOIN (
         SELECT follow.{where_var}, follow.{select_var} AS {followers}_msa_id, follow.date_minted AS date_followed
@@ -492,9 +581,29 @@ def user_followers_get(
     ON user.msa_id_from_query = followers.{followers}_msa_id
     '''
     df = pd.read_sql_query(query, con)
+    return df
+    
+class FollowersOptions(str, Enum):
+    followers = "followers"
+    followering = "following"
+    
+@app.get('/user/get/{followers}', tags=["userpage"], summary="Get a users followers or following")
+def user_followers_get(
+        followers: FollowersOptions = Path(default="followers", example="followers", description='Whether to get followers or following'),
+        user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get followers or following of"),
+        user_msa_id_to_check: int = Query(default=None, example=accounts['Dave'], description="user's msa_id to check if other user is following or being followed by"),
+    ):
+    df = get_follow_df(followers, user_msa_id)
+    
+    if user_msa_id_to_check:
+        df = df[df[f'{followers}_msa_id'] == user_msa_id_to_check]
+        if df.size == 0:
+            return False
+        else:
+            return True
+    
     response = df.to_dict(orient='records')
     return response
-
 
 class FollowOptions(str, Enum):
     follow = "follow"
@@ -503,13 +612,23 @@ class FollowOptions(str, Enum):
 @app.post('/user/interact/{follow}', tags=["userpage"], summary="Follow a user")
 def user_follow(
         follow: FollowOptions = Path(default="follow", example="follow", description='Whether to follow or unfollow'), 
-        user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id that wants to follow or unfollow"),
-        user_msa_id_to_interact_with: str = Query(default=accounts['Dave'], example=accounts['Dave'], description="user's msa_id to follow or unfollow"),
+        user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id that wants to follow or unfollow"),
+        user_msa_id_to_interact_with: int = Query(default=accounts['Dave'], example=accounts['Dave'], description="user's msa_id to follow or unfollow"), 
+        wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
     ):
+    
+    following = get_follow_df("following", user_msa_id)
     if follow == "follow":
-        reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with)
+        if user_msa_id_to_interact_with in following['following_msa_id'].values:
+            return {"message": "User is already following"}
+        is_follow = True
     else:
-        reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with, is_follow=False)
+        if user_msa_id_to_interact_with not in following['following_msa_id'].values:
+            return {"message": "User is not following"}
+        is_follow = False
+        
+    reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with, is_follow=is_follow,
+                                    wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     
     
     return {f"Success": f"You have successfully {follow}ed a user"}
@@ -535,11 +654,12 @@ def user_mint(
 def user_post(
             account_type: str = Query(example='gmail', description='Type of linked account (E.g: facebook, gmail, reddit, etc'),
             account_value: str = Query(example='example@gmail.com', description='Value of linked account (E.g: example@gamil.com, redditorusername, etc'),
-            user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to link account to"),
+            user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to link account to"),
+            wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
-    data = '{' + f'"account_type": {account_type},"account_value": "{account_value}"' + '}'
-    mint_data(data, user_msa_id, schemas['link'])
-    return 200
+    data = '{' + f'"account_type": "{account_type}","account_value": "{account_value}"' + '}'
+    mint_data(data, user_msa_id, schemas['link'], wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    return {"Success": "Link was created and will finalize on the blockchain soon."}
 
 @app.get('/airdrop/check/{reddit_username}', tags=["airdroppage"], summary="Check a Reddit user to see how much their airdrop will be as well as get an example post a user can make on Reddit to claim the airdrop.")
 def airdrop_get(
@@ -600,7 +720,7 @@ def get_centralities():
     G.add_edges_from(df[['protagonist_msa_id', 'antagonist_msa_id']].values.tolist())
     degree_scores = nx.degree_centrality(G)
     closeness_scores = nx.closeness_centrality(G)
-    betweeness_scores = nx.betweenness_centrality(G, k=100)
+    betweeness_scores = nx.betweenness_centrality(G, k=20)
     
     return [degree_scores, closeness_scores, betweeness_scores]
 
@@ -622,9 +742,8 @@ def get_user_weighted_social_score(centralities, user_msa_id):
 
 @app.get('/socialgraph/score/', tags=["socialgraph"], summary="Calculate social graph score of PostThread user.")
 def socialgraph_score(
-            user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get social score of"),
+            user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get social score of"),
         ):
-    user_msa_id = int(user_msa_id)
     if user_msa_id not in df['protagonist_msa_id'] and user_msa_id not in df['antagonist_msa_id']:
         return HTTPException(status_code=404, detail="User not following or being followed")
     
@@ -635,10 +754,9 @@ def socialgraph_score(
 
 @app.get('/socialgraph/dict_of_dicts/', tags=["socialgraph"], summary="Get social graph of PostThread user as a dict of dicts")
 def socialgraph_graph(
-            user_msa_id: str = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get social score of"),
+            user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get social score of"),
         ):
     df = pd.read_sql_query("""SELECT * FROM follow""", con)
-    user_msa_id = int(user_msa_id)
     if user_msa_id not in df['protagonist_msa_id'] and user_msa_id not in df['antagonist_msa_id']:
         return HTTPException(status_code=404, detail="User not following or being followed")
     
