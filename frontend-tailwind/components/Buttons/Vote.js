@@ -16,14 +16,13 @@ export default function Vote({ type, post }) {
                 parent_type: "post",
                 num_votes: value,
                 user_msa_id: id,
+                wait_for_inclusion: true
             }), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         })
-
-        console.log("response " + response)
 
         const data = await response.json()
         console.log(data)

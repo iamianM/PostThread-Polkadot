@@ -15,6 +15,7 @@ export default function Feed() {
   const [profiles, setProfiles] = useState([])
   const [hasMore, setHasMore] = useState(true);
   const numMessagesPerScroll = 10;
+  const notRefreshing = true
 
   async function fetchPosts() {
     setTimeout(async () => {
@@ -40,7 +41,7 @@ export default function Feed() {
     }
 
     fetchTrendingProfiles()
-  }, [])
+  }, [notRefreshing])
 
   return (
     <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
