@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
-import Comments from '../Buttons/Comments'
-import ThumbsDown from '../Buttons/ThumbsDown'
-import ThumbsUp from '../Buttons/ThumbsUp'
+import Vote from '../Buttons/Vote'
 
 export default function MockPost() {
 
     return (
         <div className="flex w-full p-8 border-b border-gray-300">
+            <span className="flex flex-col w-24 h-24 justify-center ">
+                <Vote type="up" />
+                <Vote type="down" />
+            </span>
             <span className="flex-shrink-0 w-12 h-12 bg-primary-400 rounded-full">
                 <img alt="profil" src="/postthreadicon.png"
                     className="mx-auto object-cover rounded-full" />
@@ -22,9 +24,8 @@ export default function MockPost() {
                     <img alt="image-not-found" src="./not-found.png" className="flex items-center justify-center h-64 " />
                 </div> */}
                 <div className="flex mt-2 items-center justify-between">
-                    <ThumbsUp upvotes={10} />
-                    <ThumbsDown downvotes={10} />
-                    <Comments numberOfComments={10} />
+                    <Vote type="up" />
+                    <Vote type="down" />
                     <p className="font-bold">#mock</p>
                 </div>
             </div>

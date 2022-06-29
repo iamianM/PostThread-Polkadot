@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useToasts } from 'react-toast-notifications'
 import { useAppContext } from '../../context/AppContext'
 import ProgressBar from './ProgressBar'
 
@@ -12,6 +13,8 @@ export default function ProfileCard({ id, username, profilePic }) {
     const loggedUser = context.username
     const loggedId = context.id
 
+    const { addToast } = useToasts()
+
     useEffect(() => {
         async function getExpInfo() {
             if (id > 0) {
@@ -24,22 +27,45 @@ export default function ProfileCard({ id, username, profilePic }) {
         }
 
         async function getFollowing() {
-            const response = await fetch('/api/user/following?' + new URLSearchParams({ user_msa_id: loggedId }))
+            const response = await fetch('/api/user/get/following?' + new URLSearchParams({
+                user_msa_id: loggedId,
+                user_msa_id_to_check: id
+            }))
             const data = await response.json()
             console.log(data)
-            setIsFollowing(checkIfFollowing((data)))
+            setIsFollowing(data)
         }
 
         getFollowing()
         getExpInfo()
     }, [id])
 
-    const checkIfFollowing = (data) => {
-        data?.filter(item => { item.following_msa_id === loggedId })
-        return data.length > 0
+
+    async function dailyPayout() {
+        const response = await fetch('/api/user/dailypayout?' + new URLSearchParams({ user_msa_id: loggedId }))
+        const data = await response.json()
+        console.log(data)
+        if (data.payout_amount_left_to_claim > 0) {
+            const response = await fetch('/api/user/dailypayout?' + new URLSearchParams({ user_msa_id: loggedId }),
+                {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+            const data = await response.json()
+            console.log(data)
+            addToast(`You have claimed ${data.payout_amount_left_to_claim} tokens!`, { appearance: 'success', autoDismiss: true })
+        }
+        else {
+            addToast('You don&apos;t have any rewards left, come back tomorrow!', { appearance: 'info', autoDismiss: true })
+        }
+        return data
     }
 
     const handleClick = async () => {
+        console.log("click")
         let method = isFollowing ? 'unfollow' : 'follow'
         const response = await fetch(`/api/user/interact/${method}?` + new URLSearchParams({
             user_msa_id: loggedId,
@@ -58,10 +84,10 @@ export default function ProfileCard({ id, username, profilePic }) {
                         alt="" />
                 </div>
                 <h1 className="text-inherit font-bold text-xl leading-8 my-1">{username}</h1>
-                <h3 className="text-inherit font-lg text-semibold leading-6">Owner at Her Company Inc.</h3>
+                {/* <h3 className="text-inherit font-lg text-semibold leading-6">Owner at Her Company Inc.</h3>
                 <p className="text-sm text-inherit leading-6">Lorem ipsum dolor sit amet
                     consectetur adipisicing elit.
-                    Reprehenderit, eligendi dolorum sequi illum qui unde aspernatur non deserunt</p>
+                    Reprehenderit, eligendi dolorum sequi illum qui unde aspernatur non deserunt</p> */}
                 <ul
                     className="bg-base-300 text-inherit py-2 px-3 mt-3 rounded shadow-sm">
                     <li className="flex items-center py-3">
@@ -72,6 +98,11 @@ export default function ProfileCard({ id, username, profilePic }) {
                     </li>
                     <li>
                         <ProgressBar percentage={percentage} level={level} />
+                    </li>
+                    <li>
+                        <button className="w-full bg-primary py-1 px-2 mt-4 rounded text-inherit font-semibold text-sm" onClick={dailyPayout}>
+                            Get Reward💰
+                        </button >
                     </li>
                     {/* <li className="flex items-center py-3">
                         <span>Member since</span>

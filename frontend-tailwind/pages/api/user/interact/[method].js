@@ -8,7 +8,6 @@ export default async function handler(req, res) {
         const query = req.query;
         const method = query.method
         const id = query.user_msa_id
-        console.log(`${CONSTANTS.server}/interact/${method}`)
         const idToInteractWith = query.user_msa_id_to_interact_with
         const data = await fetch(`${CONSTANTS.server}/user/interact/${method}?` + new URLSearchParams({
             user_msa_id: id,
@@ -20,6 +19,6 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json'
             }
         })
-        res.status(200).json(await data.json())
+        return res.status(200).json(await data.json())
     }
 }

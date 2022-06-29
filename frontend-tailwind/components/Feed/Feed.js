@@ -13,22 +13,25 @@ export default function Feed() {
   const [filter, setFilter] = useState("new")
   const [time, setTime] = useState(1440)
   const [profiles, setProfiles] = useState([])
+  const [hasMore, setHasMore] = useState(true);
   const numMessagesPerScroll = 10;
 
   async function fetchPosts() {
-    const response = await fetch(`api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
-      sort_by: filter,
-      minutes_filter: time,
-    }));
-    const data = await response.json();
-    setPosts(posts.concat(data));
-    setIter((prevIter) => prevIter + 1);
+    setTimeout(async () => {
+      const response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
+        sort_by: filter,
+        minutes_filter: time,
+      }));
+      const data = await response.json();
+      setPosts(posts.concat(data));
+      setIter((prevIter) => prevIter + 1);
+    }, 1500);
   }
 
   useEffect(() => {
 
     async function fetchTrendingProfiles() {
-      const response = await fetch(`api/announcement/posts/1/20?` + new URLSearchParams({
+      const response = await fetch(`/api/announcement/posts/1/20?` + new URLSearchParams({
         sort_by: "top",
         minutes_filter: 1440,
       }));
@@ -37,13 +40,13 @@ export default function Feed() {
     }
 
     fetchTrendingProfiles()
-  }, [profiles])
+  }, [])
 
   return (
     <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
       <div className="flex w-full max-w-screen-lg ">
 
-        <div className="flex flex-col w-64 py-4 pr-3">
+        <div className="flex flex-col py-4 pr-3">
           <Link href="/">
             <a
               className="px-3 py-2 mt-2 text-lg hover:text-base-100 text-primary font-medium rounded-lg hover:bg-secondary"
@@ -94,24 +97,19 @@ export default function Feed() {
               <option value="43800">month</option>
             </select>
           </div>
-          <div id="scrollableDiv" className="flex-grow overflow-auto">
-            <div className="flex w-full p-8 border-b border-neutral">
-              {isLoading ? (
-                <Loader text="Loading posts..." />
-              ) : (
-                <div>
-                  <InfiniteScroll
-                    dataLength={posts.length}
-                    next={fetchPosts}
-                    hasMore={true}
-                    loader={<Loader text="Loading..." />}
-                    scrollableTarget="scrollableDiv"
-                  >
-                    <DisplayPosts posts={posts} />
-                  </InfiniteScroll>
-                </div>
-              )}
-            </div>
+          <div className="overflow-auto">
+            {isLoading ? (
+              <Loader text="Loading posts..." />
+            ) : (
+              <InfiniteScroll
+                dataLength={posts.length}
+                next={fetchPosts}
+                hasMore={hasMore}
+                loader={<Loader text="Loading..." />}
+              >
+                <DisplayPosts posts={posts} />
+              </InfiniteScroll>
+            )}
           </div>
         </div>
         <div className="flex flex-col flex-shrink-0 w-1/4 pl-4 overflow-y-auto">

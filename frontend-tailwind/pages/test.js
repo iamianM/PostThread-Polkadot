@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import Login from '../components/LoginForm'
 import Modal from '../components/Modal'
+import MockPost from '../components/Mocks/MockPost'
 
 export default function Test() {
 
@@ -238,6 +239,9 @@ export default function Test() {
             </div>
             <div>
                 <button className="bg-secondary ml-2 mt-5 px-4 py-2 rounded-xl text-inherit hover:bg-secondary-focus focus:ring focus:ring-purple-500 focus:ring-opacity-25 outline-none" onClick={getSocialDict}>Get Social Dict</button>
+            </div>
+            <div>
+                <MockPost />
             </div>
         </>
     )

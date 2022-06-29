@@ -38,7 +38,7 @@ export default function Editor() {
             }
             )
 
-            const data = response.json()
+            const data = await response.json()
             console.log(data)
 
             addToast("Post was created and will finalize on the blockchain soon.", {
