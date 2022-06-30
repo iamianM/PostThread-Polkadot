@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQuery } from "react-query";
 import DisplayPosts from "../Feed/DisplayPosts";
 import Loader from '../Loader';
@@ -9,6 +9,11 @@ export default function ProfileInfo({ type, user }) {
     const [announcements, setAnnouncements] = useState([]);
     const [iter, setIter] = useState(1);
     const numMessagesPerScroll = 10;
+
+    useEffect(() => {
+        setAnnouncements([])
+        fetchUserAnnouncements()
+    }, [user])
 
     async function fetchUserAnnouncements() {
         let response

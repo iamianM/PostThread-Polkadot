@@ -30,7 +30,6 @@ export default function Feed() {
   }
 
   useEffect(() => {
-
     async function fetchTrendingProfiles() {
       const response = await fetch(`/api/announcement/posts/1/20?` + new URLSearchParams({
         sort_by: "top",
@@ -48,20 +47,24 @@ export default function Feed() {
       <div className="flex w-full max-w-screen-lg ">
 
         <div className="flex flex-col py-4 pr-3">
-          <Link href="/">
-            <a
-              className="px-3 py-2 mt-2 text-lg hover:text-base-100 text-primary font-medium rounded-lg hover:bg-secondary"
-            >
-              Home
+          <Link href="/create-post">
+            <a className="py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
+              New Post
             </a>
           </Link>
           <Link href="/discover">
             <a
-              className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary"
-            >
+              className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
               Discover
             </a>
           </Link>
+          <Link href="/airdrop">
+            <a
+              className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
+              Airdrop
+            </a>
+          </Link>
+
           {/* <a className="flex px-3 py-2 mt-2 mt-auto hover:text-base-100 text-lg rounded-lg font-medium hover:bg-secondary" href="/profile">
                         <span className="flex-shrink-0 w-10 h-10 bg-base-300 rounded-full"></span>
                         <div className="flex flex-col ml-2">
@@ -70,13 +73,8 @@ export default function Feed() {
                         </div>
                     </a> */}
         </div>
-        <div className="flex flex-col flex-grow border-l border-r border-neutral overflow-auto">
+        <div className="flex flex-col flex-grow border-l border-r border-neutral scrollbar-hide overflow-auto">
           <div className="flex justify-between flex-shrink-0 px-8 py-4 border-b border-neutral">
-            <Link href="/create-post">
-              <button className="flex items-center h-8 px-2 text-md bg-primary rounded-xl hover:bg-primary-focus">
-                New Post
-              </button>
-            </Link>
             <select className="focus:outline-none h-8 rounded-xl px-2 border-sm bg-primary" id="filter"
               value={filter}
               onChange={(e) => {

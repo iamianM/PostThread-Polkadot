@@ -20,6 +20,7 @@
     "react-query": "^3.39.1",
     "react-social-login": "^3.4.15",
     "react-toast-notifications": "^2.5.1",
+    "tailwind-scrollbar-hide": "^1.1.7",
     "theme-change": "^2.0.2",
     "uuid": "^8.3.2"
   },

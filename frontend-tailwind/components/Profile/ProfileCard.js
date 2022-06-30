@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { useToasts } from 'react-toast-notifications'
 import { useAppContext } from '../../context/AppContext'
 import ProgressBar from './ProgressBar'
+import { useQuery } from 'react-query'
+import Loader from '../Loader'
 
 export default function ProfileCard({ id, username, profilePic }) {
+
+
+    const { data: userInfo, isLoading } = useQuery("userInfo", fetchUserInfo);
+    const dailyReward = Math.floor(userInfo?.payout_amount_left_to_claim)
 
     const [percentage, setPercentage] = useState(0)
     const [level, setLevel] = useState(0)
@@ -41,12 +47,21 @@ export default function ProfileCard({ id, username, profilePic }) {
     }, [id])
 
 
+    async function fetchUserInfo() {
+        const response = await fetch('/api/user/dailypayout?' + new URLSearchParams({
+            user_msa_id: loggedId
+        }))
+        return response.json()
+    }
+
+
     async function dailyPayout() {
-        const response = await fetch('/api/user/dailypayout?' + new URLSearchParams({ user_msa_id: loggedId }))
-        const data = await response.json()
-        console.log(data)
-        if (data.payout_amount_left_to_claim > 0) {
-            const response = await fetch('/api/user/dailypayout?' + new URLSearchParams({ user_msa_id: loggedId }),
+        if (dailyReward > 0) {
+            addToast(`Request for ${dailyReward} tokens submitted!`, { appearance: 'info', autoDismiss: true })
+            const response = await fetch('/api/user/dailypayout?' + new URLSearchParams({
+                user_msa_id: loggedId,
+                wait_for_inclusion: true
+            }),
                 {
                     method: 'POST',
                     headers: {
@@ -56,22 +71,31 @@ export default function ProfileCard({ id, username, profilePic }) {
                 })
             const data = await response.json()
             console.log(data)
-            addToast(`You have claimed ${data.payout_amount_left_to_claim} tokens!`, { appearance: 'success', autoDismiss: true })
+            addToast(`You have claimed ${dailyReward} tokens!`, { appearance: 'success', autoDismiss: true })
         }
         else {
             addToast('You don&apos;t have any rewards left, come back tomorrow!', { appearance: 'info', autoDismiss: true })
         }
-        return data
     }
 
     const handleClick = async () => {
         console.log("click")
         let method = isFollowing ? 'unfollow' : 'follow'
+        addToast(`Request to ${method} submitted!`, { appearance: 'info', autoDismiss: true })
         const response = await fetch(`/api/user/interact/${method}?` + new URLSearchParams({
             user_msa_id: loggedId,
-            user_msa_id_to_interact_with: id
-        }))
+            user_msa_id_to_interact_with: id,
+            wait_for_inclusion: true
+        }),
+            {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
         const data = await response.json()
+        addToast(`Request to ${method} finalized on the blockchain!`, { appearance: 'success', autoDismiss: true })
         console.log(data)
     }
 
@@ -99,11 +123,16 @@ export default function ProfileCard({ id, username, profilePic }) {
                     <li>
                         <ProgressBar percentage={percentage} level={level} />
                     </li>
-                    <li>
-                        <button className="w-full bg-primary py-1 px-2 mt-4 rounded text-inherit font-semibold text-sm" onClick={dailyPayout}>
-                            Get Reward💰
-                        </button >
-                    </li>
+                    {
+                        (loggedId === id) ?
+                            <li>
+                                <button className="w-full bg-primary py-1 px-2 mt-4 rounded text-inherit font-semibold text-sm" onClick={dailyPayout} disabled={dailyReward <= 0}>
+                                    Get Reward💰 {isLoading ? <Loader /> : <>{dailyReward}</>}
+                                </button >
+                            </li> :
+                            <></>
+                    }
+
                     {/* <li className="flex items-center py-3">
                         <span>Member since</span>
                         <span className="ml-auto">Nov 07, 2016</span>
