@@ -94,7 +94,7 @@ def get_msa_id(wallet, create=False):
        
         # didn't find msa in events so call function to check for msa
         while (msa_id is None):
-            msa_id = get_msa_id(schema, create=False)
+            msa_id = get_msa_id(wallet, create=False)
     else:
         msa_id = msa_id['msa_id']
         

@@ -33,7 +33,11 @@ def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=Fal
     for schemaName, schemaId in schemas.items():
         if query_start:
             query = f"""SELECT block_number FROM {schemaName} ORDER BY date_minted DESC LIMIT 1"""
-            start_block = int(pd.read_sql_query(query, con)['block_number'].iloc[0]) + 1
+            temp = pd.read_sql_query(query, con)['block_number']
+            if temp.size == 0:
+                start_block = 0
+            else:
+                start_block = int(temp.iloc[0]) + 1
             
         if schemaToUpdate is not None and schemaName != schemaToUpdate:
             print(f"Skipping {schemaName}")

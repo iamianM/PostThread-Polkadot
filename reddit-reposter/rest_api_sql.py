@@ -1,6 +1,7 @@
 import os, sys; sys.path.append('..')
 
 import uvicorn
+import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 
 from enum import Enum
@@ -113,15 +114,11 @@ class PostInput(BaseModel):
     is_nsfw: bool 
     
 @app.post('/submit/post', tags=["submitpage"], summary="Submit data to mint a post.")
-def submit_post(
+async def submit_post(
             postInput: PostInput, 
             user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
-    if wait_for_inclusion is None:
-        wait_for_inclusion = False
-    if wait_for_finalization is None:
-        wait_for_finalization = False
 
     if user_msa_id is None:
         df = get_user(user_msa_id=user_msa_id)
@@ -129,14 +126,15 @@ def submit_post(
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
-    receipt = mint_data(postInput.__dict__, user_msa_id, schemas['post'], path+'posts/', wait_for_inclusion, wait_for_finalization)
+    _, receipt = mint_data(postInput.__dict__, user_msa_id, schemas['post'], path+'posts/', 
+                           wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and not receipt.error_message:
-        return HTTPException(status_code=402, Error=receipt.error_message)
+        return HTTPException(status_code=402, detail=receipt.error_message)
 
     return {"Success": "Post was created and will finalize on the blockchain soon."}
     
 @app.post('/submit/vote', tags=["postpage"], summary="Submit an upvote or downvote")
-def submit_vote(
+async def submit_vote(
             post_hash: str = Query(default=example_post, example=example_post, description='Post we interacting with'), 
             parent_hash: str = Query(default=example_post, example=example_post, 
                                     description='Parent to vote on. same as post_hash if voting on a post'), 
@@ -145,10 +143,6 @@ def submit_vote(
             user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
-    if wait_for_inclusion is None:
-        wait_for_inclusion = False
-    if wait_for_finalization is None:
-        wait_for_finalization = False
 
     if user_msa_id is None:
         df = get_user(user_msa_id=user_msa_id)
@@ -160,9 +154,10 @@ def submit_vote(
     _, receipt = mint_data(data, user_msa_id, schemas['vote'], 
                         wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     
+    
     if wait_for_inclusion:
         if receipt.error_message:
-            return HTTPException(status_code=402, Error=receipt.error_message)
+            return HTTPException(status_code=402, detail=receipt.error_message)
         return {"Success": "Vote was created and posted to the blockchain."} 
 
     return {"Success": "Vote was created and will finalize on the blockchain soon."}
@@ -175,15 +170,11 @@ class CommentInput(BaseModel):
     is_nsfw: bool 
     
 @app.post('/submit/comment', tags=["postpage"], summary="Submit data to mint a comment.")
-def submit_comment(
+async def submit_comment(
             commentInput: CommentInput, 
             user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
-    if wait_for_inclusion is None:
-        wait_for_inclusion = False
-    if wait_for_finalization is None:
-        wait_for_finalization = False
 
     if user_msa_id is None:
         df = get_user(user_msa_id=user_msa_id)
@@ -191,10 +182,10 @@ def submit_comment(
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
-    receipt = mint_data(commentInput.__dict__, user_msa_id, schemas['post'], path+'comments/', 
+    _, receipt = mint_data(commentInput.__dict__, user_msa_id, schemas['post'], path+'comments/', 
                         wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and not receipt.error_message:
-        return {"Error": receipt.error_message}, 402
+            return HTTPException(status_code=402, detail=receipt.error_message)
 
     return {"Success": "Comment was created and will finalize on the blockchain soon."}
 
@@ -539,10 +530,11 @@ def user_dailypayout_get(
     }
 
 @app.post('/user/dailypayout', tags=["userpage"], summary="Pays a user their daily rewards")
-def user_dailypayout_post(
+async def user_dailypayout_post(
         user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
         wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
     ):        
+        
     response = user_dailypayout_get(user_msa_id)
     if response['payout_amount_left_to_claim'] == 0:
         return response
@@ -551,11 +543,12 @@ def user_dailypayout_post(
     receipt = make_call("Balances", "transfer", {"dest": response['wallet_ss58_address'], "value": payout_amount}, bob, 
                         wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     data = '{' + f'"payout_amount": {payout_amount}' + '}'
-    mint_data(data, user_msa_id, schemas['payout'], wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    _, receipt = mint_data(data, user_msa_id, schemas['payout'], 
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return response
     
 def get_follow_df(followers, user_msa_id):
-    if followers == "followers":
+    if followers == "following":
         where_var = "protagonist_msa_id"
         select_var = "antagonist_msa_id"
     else:
@@ -566,7 +559,7 @@ def get_follow_df(followers, user_msa_id):
     SELECT followers.{followers}_msa_id, date_followed, user.*
     FROM user
     INNER JOIN (
-        SELECT follow.{where_var}, follow.{select_var} AS {followers}_msa_id, follow.date_minted AS date_followed
+        SELECT follow.{select_var} AS {followers}_msa_id, follow.date_minted AS date_followed
         FROM follow,
             (SELECT protagonist_msa_id, antagonist_msa_id, MAX(date_minted) AS date_minted
                 FROM follow
@@ -589,11 +582,13 @@ class FollowersOptions(str, Enum):
     
 @app.get('/user/get/{followers}', tags=["userpage"], summary="Get a users followers or following")
 def user_followers_get(
-        followers: FollowersOptions = Path(default="followers", example="followers", description='Whether to get followers or following'),
         user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get followers or following of"),
+        followers: FollowersOptions = Path(default="followers", example="followers", description='Whether to get followers or following'),
         user_msa_id_to_check: int = Query(default=None, example=accounts['Dave'], description="user's msa_id to check if other user is following or being followed by"),
     ):
     df = get_follow_df(followers, user_msa_id)
+    # Drop where user follows themselves
+    df = df[df[f'{followers}_msa_id'] != user_msa_id]
     
     if user_msa_id_to_check:
         df = df[df[f'{followers}_msa_id'] == user_msa_id_to_check]
@@ -610,13 +605,12 @@ class FollowOptions(str, Enum):
     unfollow = "unfollow"
     
 @app.post('/user/interact/{follow}', tags=["userpage"], summary="Follow a user")
-def user_follow(
+async def user_follow(
         follow: FollowOptions = Path(default="follow", example="follow", description='Whether to follow or unfollow'), 
         user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id that wants to follow or unfollow"),
         user_msa_id_to_interact_with: int = Query(default=accounts['Dave'], example=accounts['Dave'], description="user's msa_id to follow or unfollow"), 
         wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
     ):
-    
     following = get_follow_df("following", user_msa_id)
     if follow == "follow":
         if user_msa_id_to_interact_with in following['following_msa_id'].values:
@@ -634,11 +628,12 @@ def user_follow(
     return {f"Success": f"You have successfully {follow}ed a user"}
 
 @app.post('/user/mint', tags=["userpage"], summary="Mint a new user")
-def user_mint(
+async def user_mint(
         username: str = Query(default="test", example="Charlie", description='username to mint'),
         password: str = Query(default="password", example="password", description="user's password"), 
         profile_pic: HttpUrl = Query(default=None, example="https://www.redditstatic.com/avatars/defaults/v2/avatar_default_7.png", 
                                      description="user's profile picture"),
+        wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
     ):
     df = get_user(username, None)
     if df.size > 0:
@@ -646,19 +641,22 @@ def user_mint(
     # override password for testing
     password = "password"
     user_wallet = Keypair.create_from_uri('//' + username + password)
-    user_msa_id = create_msa_with_delegator(bob, user_wallet)
-    mint_user(user_msa_id, username, password, profile_pic, user_wallet)
+    user_msa_id = create_msa_with_delegator(bob, user_wallet, 
+                                            wait_for_inclusion=True, wait_for_finalization=wait_for_finalization)
+    mint_user(user_msa_id, username, password, profile_pic, user_wallet, 
+                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return {"user_msa_id": user_msa_id}
 
 @app.post('/user/link', tags=["userpage"], summary="Link an already verified account (email, social, etc)")
-def user_post(
+async def user_post(
             account_type: str = Query(example='gmail', description='Type of linked account (E.g: facebook, gmail, reddit, etc'),
             account_value: str = Query(example='example@gmail.com', description='Value of linked account (E.g: example@gamil.com, redditorusername, etc'),
             user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to link account to"),
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
     data = '{' + f'"account_type": "{account_type}","account_value": "{account_value}"' + '}'
-    mint_data(data, user_msa_id, schemas['link'], wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+    _, receipt = mint_data(data, user_msa_id, schemas['link'], 
+                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     return {"Success": "Link was created and will finalize on the blockchain soon."}
 
 @app.get('/airdrop/check/{reddit_username}', tags=["airdroppage"], summary="Check a Reddit user to see how much their airdrop will be as well as get an example post a user can make on Reddit to claim the airdrop.")
@@ -675,38 +673,32 @@ def airdrop_get(
     df = get_user(postthread_username, None)
     if df.size == 0:
         return HTTPException(status_code=404, detail="User not found")
-        
-    message = f"""I received an airdrop of {airdrop_value} thread tokens just by signing up to www.PostThread.com and making this post.
-    My reward was based on the karma I earned on Reddit. Now I can level up my account and earn more tokens by posting.
+    user_wallet = df['wallet_ss58_address'].iloc[0]
+    
+    title = f"I just received an airdrop of {airdrop_value} thread tokens just by signing up to www.PostThread.com"
+    body = f"""My reward was based on the karma I earned on Reddit. Now I can level up my account and earn more tokens by posting.
     Come join me on www.PostThread.com/referral/{postthread_username} and claim your airdrop too! Using my referral will also 
     earn us both 5000 experience! 
+    {user_wallet}
     """
-    return {"message": message, "airdrop_value": airdrop_value}
+    return {"title": title, "body": body, "airdrop_value": airdrop_value, "user_wallet": user_wallet}
 
 @app.post('/airdrop/claim/{reddit_username}', tags=["airdroppage"], summary="Submit URL where Reddit user submitted a post claiming the airdrop. This will verify and transfer tokens.")
-def airdrop_claim(
+async def airdrop_claim(
             reddit_username: str = Path(default="hughjassjess", example="hughjassjess", description='Username of redditor to check karma of.'),
             postthread_username: str = Query(default="hughjassjess", example="hughjassjess", description='Username they have on PostThread'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
-    user = reddit.redditor(reddit_username)
-    try:
-        airdrop_value = user.total_karma
-    except:
-        HTTPException(status_code=406, detail="No Redditor by that username exists")
-        
-    df = get_user(postthread_username, None)
-    if df.size == 0:
-        return HTTPException(status_code=404, detail="User not found")
-        
-    message = airdrop_get(reddit_username, postthread_username)
+    response = airdrop_get(reddit_username, postthread_username)
+    if type(response) == HTTPException:
+        return response
         
     for i, post in enumerate(user.new()):
         if i > 10:
             break
         if type(post) == praw.models.reddit.submission.Submission:
-            if post.selftext == message["message"]:
-                receipt = make_call("Balances", "transfer", {"dest": df['wallet_ss58_address'], "value": message["airdrop_value"]}, bob, 
+            if response["user_wallet"] in post.selftext:
+                receipt = make_call("Balances", "transfer", {"dest": response["user_wallet"], "value": response["airdrop_value"]}, bob, 
                             wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
                 return {"message": "Successfully claimed airdrop. Your reward is being transferred to your account."}
                 
