@@ -43,9 +43,8 @@ export default function Feed() {
   }, [notRefreshing])
 
   return (
-    <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
+    <div className="flex justify-center w-screen h-screen px-4 overflow-hidden text-inherit bg-base-100">
       <div className="flex w-full max-w-screen-lg ">
-
         <div className="flex flex-col py-4 pr-3">
           <Link href="/create-post">
             <a className="py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
@@ -73,7 +72,7 @@ export default function Feed() {
                         </div>
                     </a> */}
         </div>
-        <div className="flex flex-col flex-grow border-l border-r border-neutral scrollbar-hide overflow-auto">
+        <div className="flex flex-col flex-grow border-l border-r border-neutral overflow-auto">
           <div className="flex justify-between flex-shrink-0 px-8 py-4 border-b border-neutral">
             <select className="focus:outline-none h-8 rounded-xl px-2 border-sm bg-primary" id="filter"
               value={filter}

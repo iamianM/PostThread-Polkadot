@@ -4,12 +4,14 @@ import { useAppContext } from '../../context/AppContext'
 import ProgressBar from './ProgressBar'
 import { useQuery } from 'react-query'
 import Loader from '../Loader'
+import AnimateWheel from '../AnimateWheel'
 
 export default function ProfileCard({ id, username, profilePic }) {
 
 
-    const { data: userInfo, isLoading } = useQuery("userInfo", fetchUserInfo);
+    const { data: userInfo, isLoading, isFetching } = useQuery("userInfo", fetchUserInfo);
     const dailyReward = Math.floor(userInfo?.payout_amount_left_to_claim)
+    const userScore = parseFloat(userInfo?.user_social_score).toFixed(6)
 
     const [percentage, setPercentage] = useState(0)
     const [level, setLevel] = useState(0)
@@ -123,11 +125,14 @@ export default function ProfileCard({ id, username, profilePic }) {
                     <li>
                         <ProgressBar percentage={percentage} level={level} />
                     </li>
+                    <li>
+                        <p className='mt-4 gap-3 flex'>Social score: {isFetching ? <AnimateWheel stroke="stroke-primary" fill="fill-primary" /> : <>{userScore}</>}</p>
+                    </li>
                     {
                         (loggedId === id) ?
                             <li>
-                                <button className="w-full bg-primary py-1 px-2 mt-4 rounded text-inherit font-semibold text-sm" onClick={dailyPayout} disabled={dailyReward <= 0}>
-                                    Get Reward💰 {isLoading ? <Loader /> : <>{dailyReward}</>}
+                                <button className="w-full bg-primary py-1 px-2 mt-4 rounded text-inherit font-semibold text-sm gap-3 flex" onClick={dailyPayout} disabled={dailyReward <= 0}>
+                                    Get Reward💰 {isFetching ? <AnimateWheel stroke="stroke-primary-focus" fill="fill-primary-focus" /> : <>{dailyReward}</>}
                                 </button >
                             </li> :
                             <></>

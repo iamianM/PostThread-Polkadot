@@ -1,17 +1,17 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useToasts } from "react-toast-notifications";
-import { useRouter } from 'next/router'
-
+import Link from 'next/link';
 
 export default function LoginForm() {
 
     const { addToast } = useToasts()
-    const router = useRouter()
-
 
     async function fetchUser(username) {
-        const response = await fetch('api/user/data?' + new URLSearchParams({ username: username }))
+        const response = await fetch('/api/user/data?' + new URLSearchParams({
+            username: username,
+            multiple: false
+        }))
         const data = await response.json()
         return data
     }
@@ -29,6 +29,7 @@ export default function LoginForm() {
         console.log(response)
 
         if (response.password === info.password) {
+
             addToast("Login successful", {
                 appearance: 'success',
                 autoDismiss: true,
@@ -36,7 +37,7 @@ export default function LoginForm() {
             localStorage.setItem("username", info.username)
             localStorage.setItem("msa_id", response.msa_id)
             localStorage.setItem("profile_pic", response.profile_pic)
-            window.location.reload()
+            window.location = "/"
         }
         else {
             addToast("Wrong password", {
@@ -69,7 +70,9 @@ export default function LoginForm() {
                             </div>
                             <div className="flex items-baseline justify-between">
                                 <button type="submit" className="px-6 py-2 mt-4 text-base-content bg-primary rounded-lg hover:bg-primary-focus">Login</button>
-                                <a href="#" className="text-sm text-inherit hover:underline">Forgot password?</a>
+                                <Link href="/signup">
+                                    <a className="text-md text-inherit hover:underline">Sign up</a>
+                                </Link>
                             </div>
                         </div>
                     </form>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 
 export default function TrendingProfile({ profile }) {
@@ -9,11 +9,20 @@ export default function TrendingProfile({ profile }) {
         profilePic: profile.profile_pic
     }
 
+    const [showPic, setShowPic] = useState(true)
+
+    const onErrorPic = () => {
+        setShowPic(false);
+    }
+
     return (
         <div className="flex w-full py-4 border-b border-primary">
             <span className="flex-shrink-0 w-10 h-10 bg-base-300 rounded-full">
-                <img alt="profil" src={user.profilePic}
-                    className="mx-auto object-cover rounded-full" />
+                {showPic ?
+                    <img alt="profil" onError={onErrorPic} src={user.profilePic}
+                        className="mx-auto object-cover rounded-full" /> :
+                    <img alt="profil" src="/postthreadicon.png"
+                        className="mx-auto object-cover rounded-full" />}
             </span>
             <div className="flex flex-col flex-grow ml-2">
                 <div className="flex text-sm font-bold hover:text-primary" style={{ cursor: "pointer" }}>
