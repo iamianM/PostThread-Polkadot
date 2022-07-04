@@ -5,6 +5,8 @@ import { ToastProvider } from 'react-toast-notifications'
 import { themeChange } from 'theme-change'
 import React, { useEffect, useState } from 'react'
 import { AppWrapper } from '../context/AppContext';
+import { SessionProvider } from "next-auth/react"
+
 
 const queryClient = new QueryClient()
 
@@ -40,14 +42,16 @@ function MyApp({ Component, pageProps }) {
   }, [isLoggedIn])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <AppWrapper isLoggedIn={isLoggedIn} username={username} id={msa_id} profilePic={profilePic}>
-          <Header />
-          <Component {...pageProps} />
-        </AppWrapper>
-      </ToastProvider>
-    </QueryClientProvider>
+    <SessionProvider session={pageProps.session}>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <AppWrapper isLoggedIn={isLoggedIn} username={username} id={msa_id} profilePic={profilePic}>
+            <Header />
+            <Component {...pageProps} />
+          </AppWrapper>
+        </ToastProvider>
+      </QueryClientProvider>
+    </SessionProvider>
   )
 }
 

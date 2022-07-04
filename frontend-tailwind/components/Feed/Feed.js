@@ -5,6 +5,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Loader from "../Loader";
 import Link from "next/link";
 import DisplayTrendingProfiles from "../Trending/DisplayTrendingProfiles";
+import { useAppContext } from "../../context/AppContext";
 
 export default function Feed() {
   const { error, isError, isLoading } = useQuery("posts", fetchPosts);
@@ -16,6 +17,8 @@ export default function Feed() {
   const [hasMore, setHasMore] = useState(true);
   const numMessagesPerScroll = 10;
   const notRefreshing = true
+  const context = useAppContext()
+  const isLoggedIn = context.isLoggedIn
 
   async function fetchPosts() {
     setTimeout(async () => {
@@ -46,23 +49,32 @@ export default function Feed() {
     <div className="flex justify-center w-screen h-screen px-4 overflow-hidden text-inherit bg-base-100">
       <div className="flex w-full max-w-screen-lg ">
         <div className="flex flex-col py-4 pr-3">
-          <Link href="/create-post">
-            <a className="py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
-              New Post
-            </a>
-          </Link>
           <Link href="/discover">
             <a
               className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
               Discover
             </a>
           </Link>
-          <Link href="/airdrop">
-            <a
-              className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
-              Airdrop
-            </a>
-          </Link>
+          {isLoggedIn ?
+            <>
+              <Link href="/create-post">
+                <a className="py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
+                  New Post
+                </a>
+              </Link>
+              <Link href="/airdrop">
+                <a
+                  className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
+                  Airdrop
+                </a>
+              </Link>
+              <Link href="/auth/signin">
+                <a
+                  className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
+                  Connect
+                </a>
+              </Link>
+            </> : <></>}
 
           {/* <a className="flex px-3 py-2 mt-2 mt-auto hover:text-base-100 text-lg rounded-lg font-medium hover:bg-secondary" href="/profile">
                         <span className="flex-shrink-0 w-10 h-10 bg-base-300 rounded-full"></span>

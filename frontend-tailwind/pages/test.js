@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import Login from '../components/LoginForm'
 import Modal from '../components/Modal'
 import MockPost from '../components/Mocks/MockPost'
+import Image from 'next/image'
 
 export default function Test() {
 

@@ -3,7 +3,6 @@ import { useToasts } from 'react-toast-notifications'
 import { useAppContext } from '../../context/AppContext'
 import ProgressBar from './ProgressBar'
 import { useQuery } from 'react-query'
-import Loader from '../Loader'
 import AnimateWheel from '../AnimateWheel'
 
 export default function ProfileCard({ id, username, profilePic }) {
@@ -11,7 +10,7 @@ export default function ProfileCard({ id, username, profilePic }) {
 
     const { data: userInfo, isLoading, isFetching } = useQuery("userInfo", fetchUserInfo);
     const dailyReward = Math.floor(userInfo?.payout_amount_left_to_claim)
-    const userScore = parseFloat(userInfo?.user_social_score).toFixed(6)
+    const userScore = isNaN ? 0 : parseFloat(userInfo?.user_social_score).toFixed(6)
 
     const [percentage, setPercentage] = useState(0)
     const [level, setLevel] = useState(0)
@@ -20,6 +19,7 @@ export default function ProfileCard({ id, username, profilePic }) {
     const context = useAppContext()
     const loggedUser = context.username
     const loggedId = context.id
+    const isLoggedIn = context.isLoggedIn
 
     const { addToast } = useToasts()
 
@@ -117,7 +117,7 @@ export default function ProfileCard({ id, username, profilePic }) {
                 <ul
                     className="bg-base-300 text-inherit py-2 px-3 mt-3 rounded shadow-sm">
                     <li className="flex items-center py-3">
-                        {(loggedUser === username) ? <></> :
+                        {(loggedUser === username || !isLoggedIn) ? <></> :
                             <button className="w-full bg-primary py-1 px-2 rounded text-inherit font-semibold text-md" onClick={handleClick}>
                                 {isFollowing ? "Unfollow" : "Follow"}
                             </button >}

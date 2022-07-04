@@ -5,6 +5,7 @@ import InfiniteScroll from 'react-infinite-scroll-component'
 import { useQuery } from 'react-query'
 import { useToasts } from "react-toast-notifications";
 import Post from '../Feed/Post'
+import { useAppContext } from '../../context/AppContext'
 
 export default function ShowPost({ post }) {
 
@@ -14,6 +15,8 @@ export default function ShowPost({ post }) {
     const [iter, setIter] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const numMessagesPerScroll = 10;
+    const context = useAppContext()
+    const isLoggedIn = context.isLoggedIn
 
     async function fetchComments() {
         const response = await fetch(`/api/announcement/comments/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({ post_hash: post.ipfs_hash }));
@@ -69,7 +72,7 @@ export default function ShowPost({ post }) {
                     <div className="p-3 border-t-4 border-primary">
                         <Post post={post} fullImage={true} />
                     </div>
-                    <div className="py-2 px-4 bg-base-200 rounded-b-xl">
+                    {isLoggedIn ? <div className="py-2 px-4 bg-base-200 rounded-b-xl">
                         <form onSubmit={handleSubmit}>
                             <label htmlFor="editor" className="sr-only">Insert a comment </label>
                             <textarea id="comment" rows="8" className="block px-0 w-full text-sm text-inherit bg-base-200 border-2 border-primary rounded-xl focus:ring-0 " placeholder="Write a comment..." required></textarea>
@@ -79,7 +82,7 @@ export default function ShowPost({ post }) {
                                 </button>
                             </div>
                         </form>
-                    </div>
+                    </div> : <></>}
                     <div className='flex flex-col flex-grow mt-4 mb-4 max-h-screen overflow-y-auto bg-base-200 overflow-x-hidden'>
                         {isLoading ? (
                             <Loader text="Loading comments..." />
