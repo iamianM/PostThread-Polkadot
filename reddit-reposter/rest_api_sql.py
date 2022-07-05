@@ -1,6 +1,6 @@
 import os, sys; sys.path.append('..')
 
-import uvicorn
+from uvicorn import Config, Server
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,6 +30,7 @@ substrate = SubstrateInterface(
 )
 bob = Keypair.create_from_uri('//Bob')
 
+loop = asyncio.new_event_loop()
 
 reddit_creds = json.load(open(".reddit_creds.json", "r"))
 reddit = praw.Reddit(
@@ -126,9 +127,9 @@ async def submit_post(
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
-    _, receipt = mint_data(postInput.__dict__, user_msa_id, schemas['post'], path+'posts/', 
-                           wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
-    if wait_for_inclusion and not receipt.error_message:
+    _, receipt = mint_data(postInput.dict(), user_msa_id, schemas['post'], path+'posts/', 
+                           wait_for_inclusion=False, wait_for_finalization=False)
+    if wait_for_inclusion and receipt.error_message:
         return HTTPException(status_code=402, detail=receipt.error_message)
 
     return {"Success": "Post was created and will finalize on the blockchain soon."}
@@ -152,8 +153,7 @@ async def submit_vote(
 
     data = '{' + f'"post_hash": {post_hash},"parent_hash": {parent_hash},"parent_type": {parent_type},"num_votes": {num_votes}' + '}'
     _, receipt = mint_data(data, user_msa_id, schemas['vote'], 
-                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
-    
+                        wait_for_inclusion=False, wait_for_finalization=False)
     
     if wait_for_inclusion:
         if receipt.error_message:
@@ -182,9 +182,11 @@ async def submit_comment(
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
-    _, receipt = mint_data(commentInput.__dict__, user_msa_id, schemas['post'], path+'comments/', 
-                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
-    if wait_for_inclusion and not receipt.error_message:
+    print(commentInput.dict())
+    message, receipt = mint_data(commentInput.dict(), user_msa_id, schemas['comment'], path+'comments/', 
+                        wait_for_inclusion=False, wait_for_finalization=False)
+    print(message)
+    if wait_for_inclusion and receipt.error_message:
             return HTTPException(status_code=402, detail=receipt.error_message)
 
     return {"Success": "Comment was created and will finalize on the blockchain soon."}
@@ -541,10 +543,15 @@ async def user_dailypayout_post(
     
     payout_amount = response['payout_amount_left_to_claim']
     receipt = make_call("Balances", "transfer", {"dest": response['wallet_ss58_address'], "value": payout_amount}, bob, 
-                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+                        wait_for_inclusion=False, wait_for_finalization=False)
+    if wait_for_inclusion and receipt.error_message:
+        return HTTPException(status_code=402, detail=receipt.error_message)
+    
     data = '{' + f'"payout_amount": {payout_amount}' + '}'
     _, receipt = mint_data(data, user_msa_id, schemas['payout'], 
-                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+                        wait_for_inclusion=False, wait_for_finalization=False)
+    if wait_for_inclusion and receipt.error_message:
+        return HTTPException(status_code=402, detail=receipt.error_message)
     return response
     
 def get_follow_df(followers, user_msa_id):
@@ -622,7 +629,7 @@ async def user_follow(
         is_follow = False
         
     reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with, is_follow=is_follow,
-                                    wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+                                    wait_for_inclusion=False, wait_for_finalization=False)
     
     
     return {f"Success": f"You have successfully {follow}ed a user"}
@@ -642,9 +649,9 @@ async def user_mint(
     password = "password"
     user_wallet = Keypair.create_from_uri('//' + username + password)
     user_msa_id = create_msa_with_delegator(bob, user_wallet, 
-                                            wait_for_inclusion=True, wait_for_finalization=wait_for_finalization)
+                                            wait_for_inclusion=True, wait_for_finalization=False)
     mint_user(user_msa_id, username, password, profile_pic, user_wallet, 
-                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+                wait_for_inclusion=False, wait_for_finalization=False)
     return {"user_msa_id": user_msa_id}
 
 @app.post('/user/link', tags=["userpage"], summary="Link an already verified account (email, social, etc)")
@@ -656,7 +663,9 @@ async def user_post(
         ):
     data = '{' + f'"account_type": "{account_type}","account_value": "{account_value}"' + '}'
     _, receipt = mint_data(data, user_msa_id, schemas['link'], 
-                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+                wait_for_inclusion=False, wait_for_finalization=False)
+    if wait_for_inclusion and receipt.error_message:
+        return HTTPException(status_code=402, detail=receipt.error_message)
     return {"Success": "Link was created and will finalize on the blockchain soon."}
 
 @app.get('/airdrop/check/{reddit_username}', tags=["airdroppage"], summary="Check a Reddit user to see how much their airdrop will be as well as get an example post a user can make on Reddit to claim the airdrop.")
@@ -699,7 +708,9 @@ async def airdrop_claim(
         if type(post) == praw.models.reddit.submission.Submission:
             if response["user_wallet"] in post.selftext:
                 receipt = make_call("Balances", "transfer", {"dest": response["user_wallet"], "value": response["airdrop_value"]}, bob, 
-                            wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
+                            wait_for_inclusion=False, wait_for_finalization=False)
+                if wait_for_inclusion and receipt.error_message:
+                    return HTTPException(status_code=402, detail=receipt.error_message)
                 return {"message": "Successfully claimed airdrop. Your reward is being transferred to your account."}
                 
     details = "We could not match any of your recent posts with the message we provided for you. Please post again and make sure you are using the exact message we provide you."
@@ -757,4 +768,9 @@ def socialgraph_graph(
     return nx.to_dict_of_dicts(nx.bfs_tree(G, user_msa_id, reverse=False))
   
 if __name__ == '__main__':
-    uvicorn.run(app, port=5000, host='0.0.0.0', reload=True)
+    # global loop
+
+    config = Config(app=app, loop=loop, port=5000, host='0.0.0.0', reload=True, workers=10)
+    server = Server(config)
+    loop.run_until_complete(server.serve())
+    # uvicorn.run(app, port=5000, host='0.0.0.0', reload=True, workers=10)
