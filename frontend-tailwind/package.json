@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@polkadot/extension-dapp": "^0.44.1",
+    "@polkadot/util": "^9.7.2",
     "crypto-js": "^4.1.1",
     "daisyui": "^2.15.4",
     "next": "12.1.6",

@@ -3,6 +3,11 @@ import Login from '../components/LoginForm'
 import Modal from '../components/Modal'
 import MockPost from '../components/Mocks/MockPost'
 import Image from 'next/image'
+import ProfileCard from '../components/Profile/ProfileCard'
+import dynamic from 'next/dynamic'
+
+const TxComponent = dynamic(() => import('../components/TxComponent'), { ssr: false })
+
 
 export default function Test() {
 
@@ -194,7 +199,7 @@ export default function Test() {
 
     return (
         <>
-            <button className="bg-secondary ml-2 px-4 py-2 rounded-xl text-inherit hover:bg-secondary-focus focus:ring focus:ring-purple-500 focus:ring-opacity-25 outline-none" onClick={getCategories}>Get Categories</button>
+            {/* <button className="bg-secondary ml-2 px-4 py-2 rounded-xl text-inherit hover:bg-secondary-focus focus:ring focus:ring-purple-500 focus:ring-opacity-25 outline-none" onClick={getCategories}>Get Categories</button>
             <div>
                 <form onSubmit={handleSubmit}>
                     <input type="text" id="postHash" placeholder="post hash"
@@ -243,7 +248,8 @@ export default function Test() {
             </div>
             <div>
                 <MockPost />
-            </div>
+            </div> */}
+            <TxComponent />
         </>
     )
 }

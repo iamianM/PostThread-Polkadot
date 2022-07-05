@@ -4,9 +4,11 @@ import { useAppContext } from '../../context/AppContext'
 import ProgressBar from './ProgressBar'
 import { useQuery } from 'react-query'
 import AnimateWheel from '../AnimateWheel'
+import dynamic from 'next/dynamic'
+
+const TxComponent = dynamic(() => import('../TxComponent'), { ssr: false })
 
 export default function ProfileCard({ id, username, profilePic }) {
-
 
     const { data: userInfo, isLoading, isFetching } = useQuery("userInfo", fetchUserInfo);
     const dailyReward = Math.floor(userInfo?.payout_amount_left_to_claim)
@@ -130,11 +132,16 @@ export default function ProfileCard({ id, username, profilePic }) {
                     </li>
                     {
                         (loggedId === id) ?
-                            <li>
-                                <button className="w-full bg-primary py-1 px-2 mt-4 rounded text-inherit font-semibold text-sm gap-3 flex" onClick={dailyPayout} disabled={dailyReward <= 0}>
-                                    Get Reward💰 {isFetching ? <AnimateWheel stroke="stroke-primary-focus" fill="fill-primary-focus" /> : <>{dailyReward}</>}
-                                </button >
-                            </li> :
+                            <>
+                                <li>
+                                    <button className="w-full bg-primary py-1 px-2 rounded text-inherit font-semibold text-sm gap-3 flex" onClick={dailyPayout} disabled={dailyReward <= 0}>
+                                        Get Reward💰 {isFetching ? <AnimateWheel stroke="stroke-primary-focus" fill="fill-primary-focus" /> : <>{dailyReward}</>}
+                                    </button >
+                                </li>
+                                <li>
+                                    <TxComponent />
+                                </li>
+                            </> :
                             <></>
                     }
 
