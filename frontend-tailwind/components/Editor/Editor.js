@@ -13,6 +13,11 @@ export default function Editor() {
         // Stop the form from submitting and refreshing the page.
         event.preventDefault()
 
+        addToast("Post creation submitted", {
+            appearance: 'info',
+            autoDismiss: true,
+        })
+
         const post = {
             category: event.target.category.value,
             title: event.target.title.value,
@@ -22,12 +27,11 @@ export default function Editor() {
         }
 
         console.log(JSON.stringify(post))
-        const id = localStorage.getItem("msa_id")
 
         try {
             const response = await fetch(`api/submit/post?` + new URLSearchParams({
-                user_msa_id: parseInt(id),
-                wait_for_inclusion: false,
+                user_msa_id: id,
+                wait_for_inclusion: true,
                 wait_for_finalization: false
             }), {
                 method: 'POST',
