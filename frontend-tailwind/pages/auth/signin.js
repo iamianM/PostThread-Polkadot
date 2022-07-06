@@ -21,7 +21,12 @@ const Signin = ({ csrfToken, providers }) => {
         else if (imageURL.includes("discordapp")) linkedProfile = "Discord"
         else if (imageURL.includes("githubusercontent")) linkedProfile = "GitHub"
 
-        const response = await fetch(`api/user/link?` + new URLSearchParams({
+        addToast(`Linking ${linkedProfile} account`, {
+            appearance: 'info',
+            autoDismiss: true,
+        })
+
+        const response = await fetch(`/api/user/link?` + new URLSearchParams({
             account_type: linkedProfile,
             account_value: session.user.email ?? session.user.name,
             user_msa_id: id,
@@ -34,6 +39,13 @@ const Signin = ({ csrfToken, providers }) => {
             }
         })
         const data = await response.json()
+        console.log(data)
+
+        addToast(`${linkedProfile} account successfully linked`, {
+            appearance: 'success',
+            autoDismiss: true,
+        })
+
         return data
     }
 

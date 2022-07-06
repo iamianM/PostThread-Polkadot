@@ -6,12 +6,15 @@ import {
 } from '@polkadot/extension-dapp';
 import { stringToHex } from "@polkadot/util";
 import PolkadotSVG from './Buttons/PolkadotSVG';
+import { useAppContext } from '../context/AppContext';
 
 export default function TxComponent() {
 
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [accounts, setAccounts] = useState([]);
     const [connected, setConnected] = useState(false)
+    const context = useAppContext();
+    const id = context.id;
 
     const connect = async () => {
         if (typeof window !== "undefined") {
@@ -27,6 +30,38 @@ export default function TxComponent() {
             }
         }
     }
+
+    async function connectAccount(signature) {
+
+        addToast(`Linking ${selectedAccount} account`, {
+            appearance: 'info',
+            autoDismiss: true,
+        })
+
+        const response = await fetch(`/api/user/link?` + new URLSearchParams({
+            account_type: "wallet",
+            account_value: selectedAccount,
+            user_msa_id: id,
+            signed_message: signature,
+            wait_for_inclusion: true
+        }), {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        const data = await response.json()
+        console.log(data)
+
+        addToast(`${selectedAccount} account successfully linked`, {
+            appearance: 'success',
+            autoDismiss: true,
+        })
+
+        return data
+    }
+
 
     const signMessage = async () => {
         // returns an array of { address, meta: { name, source } }
@@ -50,6 +85,7 @@ export default function TxComponent() {
                     type: 'bytes'
                 });
                 console.log("Signature: " + signature)
+                await connectAccount(signature);
             }
         } catch (e) {
             console.log(e);

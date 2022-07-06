@@ -12,6 +12,8 @@ export default function AirdropCard() {
 
     const [value, setValue] = useState(0)
     const [redditName, setRedditName] = useState('')
+    const [airdropTitle, setAirdroptitle] = useState('')
+    const [airdropBody, setAirdropBody] = useState('')
 
     const handleSubmit = async (event) => {
         // Stop the form from submitting and refreshing the page.
@@ -28,6 +30,9 @@ export default function AirdropCard() {
             postthread_username: loggedUser
         }))
         const data = await response.json()
+        setAirdroptitle(data.title)
+        setAirdropBody(data.body)
+        console.log(data)
         return data
     }
 
@@ -62,7 +67,7 @@ export default function AirdropCard() {
     return (
         <div className="h-screen flex items-center justify-center bg-gray-200">
 
-            <card className="w-1/3 bg-base-300 border border-gray-100 rounded-lg text-center hover:shadow-lg align-center">
+            <div className="w-2/5 bg-base-300 border border-gray-100 rounded-lg text-center hover:shadow-lg align-center">
                 <img src="/airdrop.jpeg" className="rounded-t-lg" />
                 <div className="flex justify-center">
                     <span className="flex-shrink-0 w-12 h-12 bg-primary-400 -mt-6 rounded-full">
@@ -83,16 +88,14 @@ export default function AirdropCard() {
                     </> :
                     <><p className="font-bold pt-3 pb-2"> {`Airdrop value: ${value}🧵`}  </p>
                         <p className="font-semibold pt-3 pb-2"> Post the following message on reddit to receive the thread tokens:  </p>
-                        <p className="px-10 py-2 mb-5 text-gray-500">{`I received an airdrop of ${value} thread tokens just by signing up to www.PostThread.com and making this post.\n
-                         My reward was based on the karma I earned on Reddit. Now I can level up my account and earn more tokens by posting.\n
-                         Come join me on www.PostThread.com/referral/${loggedUser} and claim your airdrop too! Using my referral will also \n
-                         earn us both 5000 experience!`}</p>
+                        <p className="px-10 py-2 mb-5 text-gray-500 font-semibold">{airdropTitle}</p>
+                        <p className="px-10 py-2 mb-5 text-gray-500">{airdropBody}</p>
                         <button className="bg-primary px-4 py-2 mb-4 rounded-xl font-semibold text-inherit hover:bg-secondary-focus focus:ring focus:ring-purple-500 focus:ring-opacity-25 outline-none"
                             onClick={claimAirdrop}>
                             Claim!
                         </button>
                     </>}
-            </card>
+            </div>
         </div >
     )
 }
