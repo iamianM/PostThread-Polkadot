@@ -2,7 +2,7 @@ import React from 'react'
 
 export default function PolkadotSVG() {
 	return (
-		<svg version="1.1" classNameName="" id="Content" xmlns="http://www.w3.org/2000/svg"
+		<svg version="1.1" id="Content" xmlns="http://www.w3.org/2000/svg"
 			viewBox="0 0 6593.8 1410.3" height="20">
 			<path d="M2047.8,210.4c-77.2,0-151.6,9.7-181.9,17.9c-44.1,12.4-55.1,31.7-63.4,71.7l-175,807.5c-2.8,16.5-5.5,30.3-5.5,44.1
 	c0,40,26.2,66.1,68.9,66.1c46.9,0,66.2-30.3,75.8-77.2l49.6-230.1c34.4,4.1,79.9,8.3,144.7,8.3c285.3,0,463-154.3,463-387.2

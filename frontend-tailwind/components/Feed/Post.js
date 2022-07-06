@@ -30,9 +30,9 @@ export default function Post({ post, fullImage }) {
 
     return (
         <div className="flex w-auto p-8 border-b border-primary ">
-            <div className="flex flex-col w-12 h-12 justify-center ">
+            <div className="flex flex-col w-12 h-12 justify-center items-center ">
                 <Vote type="up" post={post} />
-                {post.total_votes}
+                {post.total_votes ?? 0}
                 <Vote type="down" post={post} />
             </div>
             <span className="flex-shrink-0 w-12 h-12 bg-primary-400 rounded-full">
