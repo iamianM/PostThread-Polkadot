@@ -11,6 +11,7 @@ export default function SignUpForm() {
             username: username,
             password: password,
             profile_pic: profile_pic,
+            wait_for_inclusion: true
         }), {
             method: 'POST',
             headers: {
@@ -25,6 +26,11 @@ export default function SignUpForm() {
     const handleSubmit = async (event) => {
         // Stop the form from submitting and refreshing the page.
         event.preventDefault()
+
+        addToast("User creation submitted to the blockchain", {
+            appearance: 'info',
+            autoDismiss: true,
+        })
 
         const username = event.target.username.value
         const password = event.target.password.value
@@ -46,16 +52,15 @@ export default function SignUpForm() {
                     autoDismiss: true,
                 })
                 break;
-            case 200:
+            default:
                 addToast("Sign up successful", {
                     appearance: 'success',
                     autoDismiss: true,
                 })
-                localStorage.setItem("username", response.username)
-                localStorage.setItem("msa_id", response.msa_id)
-                localStorage.setItem("profile_pic", response.profile_pic)
+                localStorage.setItem("username", username)
+                localStorage.setItem("msa_id", response.user_msa_id)
+                localStorage.setItem("profile_pic", profile_pic)
                 window.location = "/"
-            default:
                 break;
         }
     }

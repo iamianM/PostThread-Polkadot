@@ -84,7 +84,7 @@ export default function Feed() {
                         </div>
                     </a> */}
         </div>
-        <div className="flex flex-col flex-grow border-l border-r border-neutral overflow-auto">
+        <div className="flex flex-col flex-grow border-l border-r border-neutral scrollbar-hide overflow-auto">
           <div className="flex justify-between flex-shrink-0 px-8 py-4 border-b border-neutral">
             <select className="focus:outline-none h-8 rounded-xl px-2 border-sm bg-primary" id="filter"
               value={filter}

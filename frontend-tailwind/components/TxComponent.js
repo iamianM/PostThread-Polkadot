@@ -73,7 +73,7 @@ export default function TxComponent() {
                 </>
                 :
                 <>
-                    <p className='mt-4'>Connect your wallet:</p>
+                    <p className='mt-4'>Verify your wallet:</p>
                     <button className="w-full bg-primary py-1 px-2 rounded flex" onClick={connect}>
                         <PolkadotSVG className="flex items-center" />
                     </button>
