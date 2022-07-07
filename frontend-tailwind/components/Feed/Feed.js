@@ -64,7 +64,7 @@ export default function Feed({ category }) {
   return (
     <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
       <div className="flex w-full max-w-screen-lg ">
-        <div className="flex flex-col py-4 pr-3">
+        <div className="flex flex-col items-center py-4 pr-3">
           <Link href="/">
             <a
               className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">

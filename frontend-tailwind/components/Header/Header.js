@@ -3,10 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import ThemeSelector from "./ThemeSelector";
 import UserLink from "./UserLink";
-import Search from "./Search";
 import LogoutButton from "../Buttons/LogoutButton";
 import { useAppContext } from "../../context/AppContext";
 import LoginButton from "../Buttons/LoginButton";
+import SearchBar from "./SearchBar";
 
 export default function Header() {
 
@@ -38,7 +38,7 @@ export default function Header() {
               <></>
             )}
             <li className="relative group">
-              <Search />
+              <SearchBar placeholder={"Search an user..."} />
             </li>
             <li>{username ? <LogoutButton /> : <LoginButton />}</li>
           </ul>

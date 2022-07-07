@@ -5,9 +5,8 @@ import MockPost from '../components/Mocks/MockPost'
 import Image from 'next/image'
 import ProfileCard from '../components/Profile/ProfileCard'
 import dynamic from 'next/dynamic'
-
+import SearchBar from '../components/Header/SearchBar'
 const TxComponent = dynamic(() => import('../components/TxComponent'), { ssr: false })
-
 
 export default function Test() {
 
@@ -249,7 +248,7 @@ export default function Test() {
             <div>
                 <MockPost />
             </div> */}
-            <TxComponent />
+            {/* <TxComponent /> */}
         </>
     )
 }

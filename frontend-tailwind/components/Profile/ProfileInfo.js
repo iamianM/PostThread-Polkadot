@@ -21,13 +21,13 @@ export default function ProfileInfo({ type, user, comments }) {
             response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
                 sort_by: "new",
                 minutes_filter: 10000,
-                user_msa_id: user.id
+                user_msa_id: user.id ?? user.msa_id
             }));
         } else {
             response = await fetch(`/api/announcement/comments/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
                 sort_by: "new",
                 minutes_filter: 10000,
-                user_msa_id: user.id
+                user_msa_id: user.id ?? user.msa_id
             }));
         }
         const data = await response.json()

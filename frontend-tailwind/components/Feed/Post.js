@@ -29,7 +29,7 @@ export default function Post({ post, fullImage }) {
     }
 
     return (
-        <div className="flex w-auto p-8 border-b border-primary ">
+        <div className="flex w-auto p-8 border-b border-primary">
             <div className="flex flex-col w-12 h-12 justify-center items-center ">
                 <Vote type="up" post={post} />
                 {post.total_votes ?? 0}
@@ -46,7 +46,7 @@ export default function Post({ post, fullImage }) {
                 pathname: `/post/${encodeURIComponent(post.ipfs_hash)}`,
                 query: post
             }}>
-                <div className="flex flex-col w-1/2 flex-grow ml-4" style={{ cursor: 'pointer' }}>
+                <div className="flex flex-col w-1/2 flex-grow ml-4 " style={{ cursor: 'pointer' }}>
                     <div className="flex">
                         {/* <span className="font-semibold">@{username}</span> */}
                         <Link href={{

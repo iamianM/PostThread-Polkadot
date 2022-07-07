@@ -9,7 +9,7 @@ export default function ProfileSection({ user }) {
         <div>
             <div className="container mx-auto my-5 p-5">
                 <main className="flex flex-row h-screen md:flex md:-mx-2 ">
-                    <ProfileCard id={user.id} username={user.username} profilePic={user.profilePic} />
+                    <ProfileCard id={user.id ?? user.msa_id} username={user.username} profilePic={user.profilePic ?? user.profile_pic} />
                     <ProfileInfo type="Posts" user={user} />
                     <ProfileInfo type="Comments" user={user} />
                 </main>
