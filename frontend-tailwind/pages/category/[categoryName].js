@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'next/router'
-import CategorySection from '../../components/Category/CategorySection'
+import Feed from '../../components/Feed/Feed'
 
 export default function Profile() {
 
@@ -9,7 +9,7 @@ export default function Profile() {
 
     return (
         <>
-            <CategorySection category={category} />
+            <Feed category={category} />
         </>
     )
 }

@@ -7,7 +7,7 @@ import Link from "next/link";
 import DisplayTrendingProfiles from "../Trending/DisplayTrendingProfiles";
 import { useAppContext } from "../../context/AppContext";
 
-export default function Feed() {
+export default function Feed({ category }) {
   const { error, isError, isLoading } = useQuery("posts", fetchPosts);
   const [posts, setPosts] = useState([]);
   const [iter, setIter] = useState(1);
@@ -22,10 +22,21 @@ export default function Feed() {
 
   async function fetchPosts() {
     setTimeout(async () => {
-      const response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
-        sort_by: filter,
-        minutes_filter: time
-      }));
+      let response
+      if (category) {
+        response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
+          sort_by: filter,
+          minutes_filter: time,
+          category: category
+        }));
+      }
+      else {
+        response = await fetch(`/api/announcement/posts/${iter}/${numMessagesPerScroll}?` + new URLSearchParams({
+          sort_by: filter,
+          minutes_filter: time,
+        }));
+      }
+
       const data = await response.json();
       setPosts(posts.concat(data));
       setIter((prevIter) => prevIter + 1);
@@ -53,10 +64,10 @@ export default function Feed() {
     <div className="flex justify-center w-screen h-screen px-4 text-inherit bg-base-100">
       <div className="flex w-full max-w-screen-lg ">
         <div className="flex flex-col py-4 pr-3">
-          <Link href="/discover">
+          <Link href="/">
             <a
               className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
-              Discover
+              Home
             </a>
           </Link>
           {isLoggedIn ?
@@ -100,6 +111,7 @@ export default function Feed() {
               <option value="top">top</option>
               <option value="new">new</option>
             </select>
+            {category ? <h1 className="text-inherit font-bold text-xl leading-8 my-1">#{category}</h1> : <></>}
             <select className="focus:outline-none h-8 rounded-xl px-2 border-sm bg-primary" id="time"
               value={time}
               onChange={(e) => {
