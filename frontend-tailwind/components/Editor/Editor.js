@@ -23,13 +23,13 @@ export default function Editor() {
             title: event.target.title.value,
             body: event.target.body.value,
             url: event.target.url.value,
-            is_nsfw: event.target.isNSFW.value,
+            is_nsfw: parseInt(event.target.isNSFW.value),
         }
 
         console.log(JSON.stringify(post))
 
         try {
-            const response = await fetch(`api/submit/post?` + new URLSearchParams({
+            const response = await fetch(`/api/submit/post?` + new URLSearchParams({
                 user_msa_id: id,
                 wait_for_inclusion: true,
                 wait_for_finalization: false
@@ -76,8 +76,8 @@ export default function Editor() {
                                 </div>
                                 <div className="flex flex-wrap items-center space-x-1 sm:pl-4">
                                     <select className="focus:outline-none h-5 rounded-md px-2 border-sm bg-secondary" id="isNSFW">
-                                        <option value="true">true</option>
-                                        <option value="false">false</option>
+                                        <option value="1">true</option>
+                                        <option value="0">false</option>
                                     </select>
                                 </div>
                             </div>
