@@ -38,6 +38,7 @@ export default function Feed({ category }) {
       }
 
       const data = await response.json();
+      if (!data.length) setHasMore(false);
       setPosts(posts.concat(data));
       setIter((prevIter) => prevIter + 1);
     }, 1500);
