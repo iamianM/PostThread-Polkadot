@@ -84,12 +84,12 @@ export default function Feed({ category }) {
                   Airdrop
                 </a>
               </Link>
-              <Link href="/auth/signin">
+              {/* <Link href="/auth/signin">
                 <a
                   className="px-3 py-2 mt-2 text-lg hover:text-base-100 font-medium rounded-lg hover:bg-secondary">
                   Connect
                 </a>
-              </Link>
+              </Link> */}
             </> : <></>}
 
           {/* <a className="flex px-3 py-2 mt-2 mt-auto hover:text-base-100 text-lg rounded-lg font-medium hover:bg-secondary" href="/profile">

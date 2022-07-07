@@ -5,6 +5,7 @@ import ProgressBar from './ProgressBar'
 import { useQuery } from 'react-query'
 import AnimateWheel from '../AnimateWheel'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 
 const TxComponent = dynamic(() => import('../TxComponent'), { ssr: false })
 
@@ -12,7 +13,7 @@ export default function ProfileCard({ id, username, profilePic }) {
 
     const { data: userInfo, isLoading, isFetching } = useQuery("userInfo", fetchUserInfo);
     const dailyReward = Math.floor(userInfo?.payout_amount_left_to_claim)
-    const userScore = isNaN ? 0 : parseFloat(userInfo?.user_social_score).toFixed(6)
+    const userScore = isNaN(userInfo?.user_social_score) ? 0 : parseFloat(userInfo?.user_social_score).toFixed(3)
 
     const [percentage, setPercentage] = useState(0)
     const [level, setLevel] = useState(0)
@@ -140,6 +141,24 @@ export default function ProfileCard({ id, username, profilePic }) {
                                 </li>
                                 <li>
                                     <TxComponent />
+                                </li>
+                                <li>
+                                    <p className='mt-4 gap-3 flex'>Connect your accounts:</p>
+                                    <Link href="/auth/signin">
+                                        <a
+                                            className="w-full bg-primary py-1 px-2 rounded text-inherit font-semibold text-sm gap-3 flex">
+                                            Connect
+                                        </a>
+                                    </Link>
+                                </li>
+                                <li>
+                                    <p className='mt-4 gap-3 flex'>Claim an aidrop:</p>
+                                    <Link href="/airdrop">
+                                        <a
+                                            className="w-full bg-primary py-1 px-2 rounded text-inherit font-semibold text-sm gap-3 flex">
+                                            Airdrop
+                                        </a>
+                                    </Link>
                                 </li>
                             </> :
                             <></>
