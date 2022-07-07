@@ -3,7 +3,7 @@ import { useQuery } from "react-query";
 import DisplayPosts from "../Feed/DisplayPosts";
 import Loader from '../Loader';
 
-export default function ProfileInfo({ type, user }) {
+export default function ProfileInfo({ type, user, comments }) {
 
     const { error, isError, isLoading } = useQuery("announcements", fetchUserAnnouncements);
     const [announcements, setAnnouncements] = useState([]);
@@ -34,6 +34,8 @@ export default function ProfileInfo({ type, user }) {
         setAnnouncements(announcements.concat(data));
         setIter(prevIter => prevIter + 1);
     }
+
+
 
     return (
         <div className="w-2/5 md:w-2/5 max-h-screen  mx-4 bg-base-200 overflow-y-auto overflow-x-hidden">

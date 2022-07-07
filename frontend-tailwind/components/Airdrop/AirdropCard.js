@@ -37,6 +37,8 @@ export default function AirdropCard() {
     }
 
     async function claimAirdrop() {
+
+
         const response = await fetch(`/api/airdrop/claim/${redditName}?` + new URLSearchParams({
             postthread_username: loggedUser,
             wait_for_inclusion: true

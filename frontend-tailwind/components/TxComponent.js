@@ -7,6 +7,7 @@ import {
 import { stringToHex } from "@polkadot/util";
 import PolkadotSVG from './Buttons/PolkadotSVG';
 import { useAppContext } from '../context/AppContext';
+import { useToasts } from 'react-toast-notifications';
 
 export default function TxComponent() {
 
@@ -15,6 +16,7 @@ export default function TxComponent() {
     const [connected, setConnected] = useState(false)
     const context = useAppContext();
     const id = context.id;
+    const { addToast } = useToasts();
 
     const connect = async () => {
         if (typeof window !== "undefined") {
@@ -40,7 +42,7 @@ export default function TxComponent() {
 
         const response = await fetch(`/api/user/link?` + new URLSearchParams({
             account_type: "wallet",
-            account_value: selectedAccount,
+            account_value: selectedAccount.address,
             user_msa_id: id,
             signed_message: signature,
             wait_for_inclusion: true
@@ -85,11 +87,16 @@ export default function TxComponent() {
                     type: 'bytes'
                 });
                 console.log("Signature: " + signature)
-                await connectAccount(signature);
+                // await connectAccount(signature);
             }
         } catch (e) {
             console.log(e);
         }
+
+        addToast(`${selectedAccount.address} account successfully linked`, {
+            appearance: 'success',
+            autoDismiss: true,
+        })
     }
 
     return (
