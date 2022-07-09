@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from enum import Enum
 from typing import Union
 from flask import jsonify
-from fastapi import FastAPI, Query, Path, HTTPException
+from fastapi import FastAPI, Query, Path, HTTPException, BackgroundTasks
 from pydantic import BaseModel, HttpUrl
 import networkx as nx
 
@@ -111,7 +111,7 @@ class PostInput(BaseModel):
     category: str
     title: str
     body: str
-    url: HttpUrl = "http://www.google.com"
+    url: str = "http://www.google.com"
     is_nsfw: bool 
     
 @app.post('/submit/post', tags=["submitpage"], summary="Submit data to mint a post.")
@@ -120,6 +120,8 @@ async def submit_post(
             user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
+    wait_for_inclusion = False
+    wait_for_finalization = False
 
     if user_msa_id is None:
         df = get_user(user_msa_id=user_msa_id)
@@ -128,7 +130,7 @@ async def submit_post(
         user_msa_id = df['msa_id'].iloc[0]
 
     _, receipt = mint_data(postInput.dict(), user_msa_id, schemas['post'], path+'posts/', 
-                           wait_for_inclusion=False, wait_for_finalization=False)
+                           wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and receipt.error_message:
         return HTTPException(status_code=402, detail=receipt.error_message)
 
@@ -144,6 +146,8 @@ async def submit_vote(
             user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
+    wait_for_inclusion = False
+    wait_for_finalization = False
 
     if user_msa_id is None:
         df = get_user(user_msa_id=user_msa_id)
@@ -153,7 +157,7 @@ async def submit_vote(
 
     data = '{' + f'"post_hash": {post_hash},"parent_hash": {parent_hash},"parent_type": {parent_type},"num_votes": {num_votes}' + '}'
     _, receipt = mint_data(data, user_msa_id, schemas['vote'], 
-                        wait_for_inclusion=False, wait_for_finalization=False)
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     
     if wait_for_inclusion:
         if receipt.error_message:
@@ -175,6 +179,8 @@ async def submit_comment(
             user_msa_id: int = Query(default=None, example=accounts['Charlie'], description='msa_id of user to submit post for'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
+    wait_for_inclusion = False
+    wait_for_finalization = False
 
     if user_msa_id is None:
         df = get_user(user_msa_id=user_msa_id)
@@ -182,10 +188,8 @@ async def submit_comment(
             return HTTPException(status_code=404, detail="User not found")
         user_msa_id = df['msa_id'].iloc[0]
 
-    print(commentInput.dict())
     message, receipt = mint_data(commentInput.dict(), user_msa_id, schemas['comment'], path+'comments/', 
-                        wait_for_inclusion=False, wait_for_finalization=False)
-    print(message)
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and receipt.error_message:
             return HTTPException(status_code=402, detail=receipt.error_message)
 
@@ -338,7 +342,7 @@ def announcements_get(
     {order_by}
     LIMIT {lower_bound}, {upper_bound}
     '''
-    df = pd.read_sql_query(query, con).drop_duplicates()
+    df = pd.read_sql_query(query, con).drop_duplicates().fillna(0)
     response = df.to_dict(orient='records')
     return response
 
@@ -450,14 +454,12 @@ def get_user_level_df(user_msa_id=None):
     df = pd.read_sql_query(query, con).fillna(0)
     return df
 
-def get_user_exp(count_dict, user_msa_id):
-    exp = 0
+def get_user_exp(userLevel, count_dict, user_msa_id):
     for k, v in rewards.items():
         if k == 'user' or k == 'link' or k == 'payout':
             continue
         
-        exp += count_dict[f'{k}_count'] * v
-    return exp
+        userLevel.exp += count_dict[f'{k}_count'] * v
 
 class UserLevel(BaseModel):
     exp: float = level_to_xp(user_starting_level)
@@ -475,7 +477,7 @@ def user_level_get(
     count_dict = count_dict.iloc[0].to_dict()
     
     userLevel = UserLevel()
-    userLevel.exp = get_user_exp(count_dict, user_msa_id)
+    get_user_exp(userLevel, count_dict, user_msa_id)
     userLevel.level = int(xp_to_level(userLevel.exp))
     userLevel.exp_to_next_level = level_to_xp(userLevel.level + 1)
     
@@ -497,7 +499,7 @@ def user_dailypayout_get(
         ORDER BY date_minted DESC LIMIT 1
     """, con)['date_minted']
     
-    if last_payout_date.shape[0] > 0 and last_payout_date[0] < datetime.datetime.now().strftime('%Y-%m-%d'):
+    if last_payout_date.shape[0] > 0 and last_payout_date[0] > datetime.datetime.now().strftime('%Y-%m-%d'):
         return {
             "details": "Users already claimed their payout today",
             "payout_amount_left_to_claim": 0, "seconds_till_next_payout": seconds_till_next_payout
@@ -518,14 +520,18 @@ def user_dailypayout_get(
     for index, row in df.iterrows():
         count_dict = row.to_dict()
         msa_id = row['msa_id_from_query']
-        users_level[msa_id] = xp_to_level(get_user_exp(count_dict, msa_id)) + user_starting_level
+        userLevel = UserLevel()
+        get_user_exp(userLevel, count_dict, user_msa_id)
+        userLevel.level = int(xp_to_level(userLevel.exp))
+        userLevel.exp_to_next_level = level_to_xp(userLevel.level + 1)
+        users_level[msa_id] = userLevel.level
         weighted_avgs[msa_id] = get_user_weighted_social_score(centralities, msa_id)
         users_score[msa_id] = users_level[msa_id] * weighted_avgs[msa_id]
         
     user_score = users_score[user_msa_id] / max(users_score.values())
     
     return {
-        "user_level": users_level[user_msa_id], "user_social_score": weighted_avgs[user_msa_id]/6,
+        "user_level": users_level[user_msa_id], "user_social_score": weighted_avgs[user_msa_id]/6 *1000,
         "user_score": user_score, "payout_amount_left_to_claim": daily_token_rewards * user_score, 
         "seconds_till_next_payout": seconds_till_next_payout, 
         "wallet_ss58_address": df[df['msa_id_from_query'] == user_msa_id]['wallet_ss58_address'].iloc[0]
@@ -536,6 +542,8 @@ async def user_dailypayout_post(
         user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get data for"),
         wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
     ):        
+    wait_for_inclusion = False
+    wait_for_finalization = False
         
     response = user_dailypayout_get(user_msa_id)
     if response['payout_amount_left_to_claim'] == 0:
@@ -543,13 +551,13 @@ async def user_dailypayout_post(
     
     payout_amount = response['payout_amount_left_to_claim']
     receipt = make_call("Balances", "transfer", {"dest": response['wallet_ss58_address'], "value": payout_amount}, bob, 
-                        wait_for_inclusion=False, wait_for_finalization=False)
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and receipt.error_message:
         return HTTPException(status_code=402, detail=receipt.error_message)
     
     data = '{' + f'"payout_amount": {payout_amount}' + '}'
     _, receipt = mint_data(data, user_msa_id, schemas['payout'], 
-                        wait_for_inclusion=False, wait_for_finalization=False)
+                        wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and receipt.error_message:
         return HTTPException(status_code=402, detail=receipt.error_message)
     return response
@@ -618,6 +626,8 @@ async def user_follow(
         user_msa_id_to_interact_with: int = Query(default=accounts['Dave'], example=accounts['Dave'], description="user's msa_id to follow or unfollow"), 
         wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
     ):
+    wait_for_inclusion = False
+    wait_for_finalization = False
     following = get_follow_df("following", user_msa_id)
     if follow == "follow":
         if user_msa_id_to_interact_with in following['following_msa_id'].values:
@@ -629,41 +639,50 @@ async def user_follow(
         is_follow = False
         
     reciept_follow = follow_user(user_msa_id, user_msa_id_to_interact_with, is_follow=is_follow,
-                                    wait_for_inclusion=False, wait_for_finalization=False)
+                                    wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     
     
     return {f"Success": f"You have successfully {follow}ed a user"}
 
+def create_msa_and_mint_user(user_wallet, username, password, profile_pic):
+    user_msa_id = create_msa_with_delegator(bob, user_wallet, 
+                                            wait_for_inclusion=True, wait_for_finalization=False)
+    mint_user(user_msa_id, username, password, profile_pic, user_wallet, 
+                wait_for_inclusion=False, wait_for_finalization=False)
+
 @app.post('/user/mint', tags=["userpage"], summary="Mint a new user")
 async def user_mint(
+        background_tasks: BackgroundTasks,
         username: str = Query(default="test", example="Charlie", description='username to mint'),
         password: str = Query(default="password", example="password", description="user's password"), 
         profile_pic: HttpUrl = Query(default=None, example="https://www.redditstatic.com/avatars/defaults/v2/avatar_default_7.png", 
                                      description="user's profile picture"),
-        wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
+        wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None, 
     ):
+    wait_for_inclusion = False
+    wait_for_finalization = False
     df = get_user(username, None)
     if df.size > 0:
         return HTTPException(status_code=406, detail="Username already exists")
     # override password for testing
     password = "password"
     user_wallet = Keypair.create_from_uri('//' + username + password)
-    user_msa_id = create_msa_with_delegator(bob, user_wallet, 
-                                            wait_for_inclusion=True, wait_for_finalization=False)
-    mint_user(user_msa_id, username, password, profile_pic, user_wallet, 
-                wait_for_inclusion=False, wait_for_finalization=False)
-    return {"user_msa_id": user_msa_id}
+    background_tasks.add_task(create_msa_and_mint_user, user_wallet, username, password, profile_pic)
+    return {"message": "User minting started"}
 
 @app.post('/user/link', tags=["userpage"], summary="Link an already verified account (email, social, etc)")
 async def user_post(
             account_type: str = Query(example='gmail', description='Type of linked account (E.g: facebook, gmail, reddit, etc'),
             account_value: str = Query(example='example@gmail.com', description='Value of linked account (E.g: example@gamil.com, redditorusername, etc'),
             user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to link account to"),
+            signed_message: str = Query(default=None, description="Signed message to include when linking wallet"),
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
+    wait_for_inclusion = False
+    wait_for_finalization = False
     data = '{' + f'"account_type": "{account_type}","account_value": "{account_value}"' + '}'
     _, receipt = mint_data(data, user_msa_id, schemas['link'], 
-                wait_for_inclusion=False, wait_for_finalization=False)
+                wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
     if wait_for_inclusion and receipt.error_message:
         return HTTPException(status_code=402, detail=receipt.error_message)
     return {"Success": "Link was created and will finalize on the blockchain soon."}
@@ -677,7 +696,7 @@ def airdrop_get(
     try:
         airdrop_value = user.total_karma
     except:
-        HTTPException(status_code=406, detail="No Redditor by that username exists")
+        return HTTPException(status_code=406, detail="No Redditor by that username exists")
         
     df = get_user(postthread_username, None)
     if df.size == 0:
@@ -698,6 +717,8 @@ async def airdrop_claim(
             postthread_username: str = Query(default="hughjassjess", example="hughjassjess", description='Username they have on PostThread'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
+    wait_for_inclusion = False
+    wait_for_finalization = False
     response = airdrop_get(reddit_username, postthread_username)
     if type(response) == HTTPException:
         return response
@@ -708,7 +729,7 @@ async def airdrop_claim(
         if type(post) == praw.models.reddit.submission.Submission:
             if response["user_wallet"] in post.selftext:
                 receipt = make_call("Balances", "transfer", {"dest": response["user_wallet"], "value": response["airdrop_value"]}, bob, 
-                            wait_for_inclusion=False, wait_for_finalization=False)
+                            wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization)
                 if wait_for_inclusion and receipt.error_message:
                     return HTTPException(status_code=402, detail=receipt.error_message)
                 return {"message": "Successfully claimed airdrop. Your reward is being transferred to your account."}

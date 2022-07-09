@@ -71,7 +71,7 @@ def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=Fal
                 "from_index": 0,
             }
         ]
-
+        
         request = substrate.rpc_request(
             method='messages_getBySchema',
             params=params,
