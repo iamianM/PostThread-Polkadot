@@ -29,6 +29,7 @@ def get_posts():
 def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=False):        
     current_block = substrate.get_block()['header']['number']
     date_format = "%Y-%m-%d %H:%M:%S"
+    was_updated = False
 
     for schemaName, schemaId in schemas.items():
         if query_start:
@@ -95,6 +96,7 @@ def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=Fal
         
         if len(contents) > 0:
             print(schemaName, len(contents))
+            was_updated = True
             
 
         table_values = []
@@ -159,4 +161,4 @@ def update_db(start_block=0, backfill=True, schemaToUpdate=None, query_start=Fal
         cur.executemany(f"INSERT OR IGNORE INTO {schemaName} VALUES ({value_holders})", table_values)
         
     con.commit()
-    return current_block
+    return current_block, was_updated

@@ -532,7 +532,7 @@ def user_dailypayout_get(
     
     return {
         "user_level": users_level[user_msa_id], "user_social_score": weighted_avgs[user_msa_id]/6 *1000,
-        "user_score": user_score, "payout_amount_left_to_claim": daily_token_rewards * user_score, 
+        "user_score": user_score*1000, "payout_amount_left_to_claim": daily_token_rewards * user_score, 
         "seconds_till_next_payout": seconds_till_next_payout, 
         "wallet_ss58_address": df[df['msa_id_from_query'] == user_msa_id]['wallet_ss58_address'].iloc[0]
     }
@@ -744,7 +744,7 @@ def get_centralities():
     G.add_edges_from(df[['protagonist_msa_id', 'antagonist_msa_id']].values.tolist())
     degree_scores = nx.degree_centrality(G)
     closeness_scores = nx.closeness_centrality(G)
-    betweeness_scores = nx.betweenness_centrality(G, k=20)
+    betweeness_scores = nx.betweenness_centrality(G, k=1)
     
     return [degree_scores, closeness_scores, betweeness_scores]
 
@@ -768,13 +768,14 @@ def get_user_weighted_social_score(centralities, user_msa_id):
 def socialgraph_score(
             user_msa_id: int = Query(default=accounts['Charlie'], example=accounts['Charlie'], description="user's msa_id to get social score of"),
         ):
+    df = pd.read_sql_query("""SELECT * FROM follow""", con)
     if user_msa_id not in df['protagonist_msa_id'] and user_msa_id not in df['antagonist_msa_id']:
         return HTTPException(status_code=404, detail="User not following or being followed")
     
     centralities = get_centralities()
     weighted_avg = get_user_weighted_social_score(centralities, user_msa_id)
     
-    return {"social_score": weighted_avg}
+    return {"social_score": weighted_avg*1000}
 
 @app.get('/socialgraph/dict_of_dicts/', tags=["socialgraph"], summary="Get social graph of PostThread user as a dict of dicts")
 def socialgraph_graph(
