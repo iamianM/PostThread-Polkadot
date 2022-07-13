@@ -93,8 +93,10 @@ def get_msa_id(wallet, create=False):
                 return msa_id
        
         # didn't find msa in events so call function to check for msa
-        while (msa_id is None):
+        count = 0
+        while (msa_id is None and count > 20):
             msa_id = get_msa_id(wallet, create=False)
+            count += 1
     else:
         msa_id = msa_id['msa_id']
         
