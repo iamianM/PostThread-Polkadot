@@ -717,6 +717,7 @@ async def airdrop_claim(
             postthread_username: str = Query(default="hughjassjess", example="hughjassjess", description='Username they have on PostThread'), 
             wait_for_inclusion: Union[bool, None]=None, wait_for_finalization: Union[bool, None]=None
         ):
+    user = reddit.redditor(reddit_username)
     wait_for_inclusion = False
     wait_for_finalization = False
     response = airdrop_get(reddit_username, postthread_username)
