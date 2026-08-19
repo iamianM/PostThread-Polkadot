@@ -1,5 +1,7 @@
 # PostThread
 
+> 🏆 **Winner:** [1st Place in Web3 & Tooling](https://polkadot-na.devpost.com/updates/22671-winners-announcement) at the 2022 Polkadot Hackathon: North America Edition ($20,000), plus a [Crust Network Best Use of Crust honorable mention](https://devpost.com/software/postthread-uhgac6) ($2,000).
+
 ## About
 
 PostThread is a social media app first and a crypto app second. It is designed so that any user can feel comfortable using the app with no knowledge of crypto what-so-ever, but still have the ability to take control of their digital assets if they choose to. Users are encouraged to grow their profile by contributing, curating and interacting with the site as well as developing a strong following. The scores determined from these are used to distribute tokens each day to all users. We believe this will help to compensate content creators and curators efficiently as well as promote valuable content on PostThread.
